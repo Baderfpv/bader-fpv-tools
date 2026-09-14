@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#05090d">
+<title>Flight Modes Visualizer — BADER FPV TOOLS</title>
+<style>
+:root{--bg:#05090d;--text:#f7f9fb;--muted:#93a5b4;--cyan:#22d3ee;--line:rgba(34,211,238,.25)}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;color:var(--text);font-family:Inter,"Segoe UI",Tahoma,Arial,sans-serif;background:radial-gradient(circle at 50% -10%,rgba(14,165,233,.17),transparent 34%),linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px),var(--bg);background-size:auto,34px 34px,34px 34px,auto}
+button,input{font:inherit}a{color:inherit;text-decoration:none}.wrap{width:min(900px,calc(100% - 20px));margin:auto;padding:16px 0 34px}
+.topbar{direction:ltr;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.back{display:inline-flex;align-items:center;gap:8px;padding:9px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.025);color:#cbd8e0;font-size:12px}
+.brand{font-weight:900;letter-spacing:.11em;font-size:12px}.brand b{color:var(--cyan)}
+.hero{border:1px solid var(--line);border-radius:25px;padding:22px 18px;background:linear-gradient(180deg,rgba(255,255,255,.032),rgba(255,255,255,.012))}
+.kicker{direction:ltr;color:var(--cyan);font-size:10px;letter-spacing:.19em;font-weight:850}
+h1{direction:ltr;margin:6px 0 8px;font-size:clamp(28px,7vw,48px);line-height:1;letter-spacing:-.035em}
+.hero p{margin:0;color:#cbd8e0;line-height:1.65;font-size:14px}
+.modebar{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:18px;direction:ltr}
+.mode{cursor:pointer;border:1px solid rgba(34,211,238,.22);background:#0a1218;color:#b9cad5;padding:12px;border-radius:14px;font-weight:850}
+.mode.active{color:#021014;background:var(--cyan);border-color:var(--cyan);box-shadow:0 0 25px rgba(34,211,238,.16)}
+.grid{display:grid;grid-template-columns:1.12fr .88fr;gap:12px;margin-top:12px}
+.card{border:1px solid rgba(34,211,238,.22);border-radius:22px;background:linear-gradient(180deg,rgba(14,24,32,.97),rgba(7,13,18,.97));padding:16px;min-width:0}
+.card-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.card-title strong{font-size:15px}
+.pill{direction:ltr;color:var(--cyan);font-size:10px;letter-spacing:.12em;border:1px solid rgba(34,211,238,.25);padding:5px 8px;border-radius:999px}
+.stage{height:310px;border:1px solid rgba(255,255,255,.055);border-radius:18px;position:relative;overflow:hidden;background:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px),radial-gradient(circle at 50% 50%,rgba(34,211,238,.08),transparent 55%),#071017;background-size:30px 30px,30px 30px,auto,auto}
+.horizon{position:absolute;left:7%;right:7%;top:50%;height:1px;background:rgba(34,211,238,.5);box-shadow:0 0 12px rgba(34,211,238,.35)}
+.horizon:after{content:"LEVEL";position:absolute;right:0;top:7px;direction:ltr;font-size:9px;letter-spacing:.12em;color:#6f8999}
+.drone-wrap{position:absolute;inset:0;display:grid;place-items:center}
+.drone{width:150px;height:72px;position:relative;transform-origin:50% 50%;filter:drop-shadow(0 0 18px rgba(34,211,238,.18))}
+.arm{position:absolute;left:19px;right:19px;top:34px;height:5px;border-radius:8px;background:linear-gradient(90deg,var(--cyan),#dffcff,var(--cyan))}
+.body{position:absolute;left:55px;top:24px;width:40px;height:25px;border-radius:8px;border:2px solid #f0f7fa;background:#0c1920}
+.motor{position:absolute;top:20px;width:30px;height:30px;border-radius:50%;border:2px solid var(--cyan)}.m1{left:0}.m2{right:0}
+.prop{position:absolute;top:33px;width:40px;height:3px;border-radius:10px;background:#8feeff}.p1{left:-5px}.p2{right:-5px}
+.angle-readout{position:absolute;left:14px;bottom:12px;direction:ltr;font-weight:900;font-size:25px;color:#e7f9fc}
+.mode-readout{position:absolute;right:14px;bottom:14px;direction:ltr;color:var(--cyan);font-size:11px;letter-spacing:.14em}
+.behavior{position:absolute;left:14px;right:14px;top:14px;text-align:center;font-size:11px;color:#b7c9d4}
+.stick-area{width:220px;max-width:100%;aspect-ratio:1;margin:4px auto 16px;position:relative;border-radius:22px;border:1px solid rgba(34,211,238,.2);background:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px),#071017;background-size:25% 25%;touch-action:none;cursor:crosshair;user-select:none}
+.crossX,.crossY{position:absolute;background:rgba(34,211,238,.22);pointer-events:none}.crossX{left:8%;right:8%;top:50%;height:1px}.crossY{top:8%;bottom:8%;left:50%;width:1px}
+.knob{width:42px;height:42px;border-radius:50%;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--cyan);box-shadow:0 0 25px rgba(34,211,238,.35);border:3px solid #dffcff;pointer-events:none}
+.axis{direction:ltr;display:flex;justify-content:space-between;color:var(--muted);font-size:10px;margin-top:-10px}
+.metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px}.metric{border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:10px;background:rgba(255,255,255,.018)}
+.metric small{display:block;color:var(--muted);font-size:10px;margin-bottom:4px}.metric b{direction:ltr;display:block;font-size:17px}
+.control{margin-top:13px}.control-head{display:flex;justify-content:space-between;gap:10px;align-items:center;font-size:12px;margin-bottom:7px}.control-head b{direction:ltr;color:#dff9fc}
+input[type=range]{width:100%;accent-color:var(--cyan)}
+.explain{margin-top:12px;padding:13px;border-radius:16px;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.018);line-height:1.75;color:#c7d4dc;font-size:13px}.explain b{color:#fff}
+.reset{cursor:pointer;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.025);color:#d5e0e6;padding:8px 10px;border-radius:11px;font-size:11px}
+.note{margin-top:12px;color:#7f95a4;font-size:11px;line-height:1.6;text-align:center}
+@media(max-width:720px){.grid{grid-template-columns:1fr}.stage{height:280px}.stick-area{width:205px}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<div class="topbar"><a class="back" href="index.html">← BADER FPV TOOLS</a><div class="brand">BADER <b>FPV LAB</b></div></div>
+
+<section class="hero">
+<div class="kicker">INTERACTIVE FLIGHT MODES</div>
+<h1>ANGLE / HORIZON / ACRO</h1>
+<p>حرّك عصا الـRoll ثم اتركها في المنتصف. ركّز على ما يفعله الدرون بعد ترك العصا.</p>
+<div class="modebar">
+<button class="mode active" data-mode="ANGLE">ANGLE</button>
+<button class="mode" data-mode="HORIZON">HORIZON</button>
+<button class="mode" data-mode="ACRO">ACRO</button>
+</div>
+</section>
+
+<section class="grid">
+<div class="card">
+<div class="card-title"><strong>حركة الدرون</strong><span class="pill">ROLL AXIS</span></div>
+<div class="stage">
+<div class="horizon"></div>
+<div class="behavior" id="behavior"></div>
+<div class="drone-wrap"><div class="drone" id="drone"><div class="arm"></div><div class="body"></div><div class="motor m1"></div><div class="motor m2"></div><div class="prop p1"></div><div class="prop p2"></div></div></div>
+<div class="angle-readout" id="angleReadout">0°</div>
+<div class="mode-readout" id="modeReadout">ANGLE</div>
+</div>
+
+<div class="metrics">
+<div class="metric"><small>Stick input</small><b id="stickMetric">0%</b></div>
+<div class="metric"><small>Command</small><b id="targetMetric">0°</b></div>
+<div class="metric"><small>Auto level</small><b id="levelMetric">ON</b></div>
+<div class="metric"><small>Control</small><b id="typeMetric">ANGLE</b></div>
+</div>
+</div>
+
+<div class="card">
+<div class="card-title"><strong>حرّك العصا يمين / يسار</strong><button class="reset" id="resetBtn">RESET</button></div>
+<div class="stick-area" id="stick"><div class="crossX"></div><div class="crossY"></div><div class="knob" id="knob"></div></div>
+<div class="axis"><span>ROLL LEFT</span><span>ROLL RIGHT</span></div>
+
+<div class="control"><div class="control-head"><span>Angle limit</span><b id="angleVal">60°</b></div><input id="angleLimit" type="range" min="20" max="80" value="60"></div>
+<div class="control"><div class="control-head"><span>Rate توضيحي</span><b id="rateVal">600°/s</b></div><input id="maxRate" type="range" min="200" max="1200" step="50" value="600"></div>
+
+<div class="explain" id="explain"></div>
+</div>
+</section>
+
+<div class="note">هذا Visualizer تعليمي مبسّط لشرح الفرق في فلسفة التحكم، وليس محاكاة كاملة لخوارزمية Betaflight.</div>
+</main>
+
+<script>
+"use strict";
+
+const modes = Array.from(document.querySelectorAll(".mode"));
+const drone = document.getElementById("drone");
+const behavior = document.getElementById("behavior");
+const angleReadout = document.getElementById("angleReadout");
+const modeReadout = document.getElementById("modeReadout");
+const stickMetric = document.getElementById("stickMetric");
+const targetMetric = document.getElementById("targetMetric");
+const levelMetric = document.getElementById("levelMetric");
+const typeMetric = document.getElementById("typeMetric");
+const explain = document.getElementById("explain");
+const stick = document.getElementById("stick");
+const knob = document.getElementById("knob");
+const angleLimit = document.getElementById("angleLimit");
+const maxRate = document.getElementById("maxRate");
+const angleVal = document.getElementById("angleVal");
+const rateVal = document.getElementById("rateVal");
+const resetBtn = document.getElementById("resetBtn");
+
+let mode = "ANGLE";
+let stickX = 0;
+let attitude = 0;
+let dragging = false;
+let lastTime = performance.now();
+
+function clamp(v,min,max){return Math.max(min,Math.min(max,v))}
+function wrap180(v){while(v>180)v-=360;while(v<-180)v+=360;return v}
+function shortestError(target,current){return wrap180(target-current)}
+
+function setMode(nextMode){
+  mode = nextMode;
+  modes.forEach(btn=>btn.classList.toggle("active",btn.dataset.mode===mode));
+  modeReadout.textContent = mode;
+
+  if(mode==="ANGLE"){
+    levelMetric.textContent="ON";
+    typeMetric.textContent="ANGLE";
+    behavior.innerHTML='وسّط العصا → <b>يرجع Level</b>';
+    explain.innerHTML='<b>ANGLE:</b> موضع العصا يطلب زاوية ميل. عند ترك العصا في المنتصف يعود الدرون للمستوى تلقائيًا.';
+  }else if(mode==="HORIZON"){
+    levelMetric.textContent="ON";
+    typeMetric.textContent="HYBRID";
+    behavior.innerHTML='وسّط العصا → <b>يرجع Level</b>';
+    explain.innerHTML='<b>HORIZON:</b> قرب المنتصف يتصرف مثل Angle. عند أطراف العصا يصبح أقرب إلى Acro ويسمح بالـFlip، ثم عند ترك العصا يرجع للمستوى.';
+  }else{
+    levelMetric.textContent="OFF";
+    typeMetric.textContent="RATE";
+    behavior.innerHTML='وسّط العصا → <b>يبقى على نفس الميل</b>';
+    explain.innerHTML='<b>ACRO:</b> العصا تطلب معدل دوران. عند توسيط العصا يتوقف الدوران فقط؛ الدرون لا يرجع Level إلا إذا أنت عدّلته بعصا معاكسة.';
+  }
+}
+
+function setStickFromPointer(e){
+  const rect=stick.getBoundingClientRect();
+  stickX=clamp(((e.clientX-rect.left)/rect.width)*2-1,-1,1);
+  knob.style.left=((stickX+1)*50)+"%";
+  stickMetric.textContent=Math.round(stickX*100)+"%";
+}
+
+function centerStick(){
+  dragging=false;
+  stickX=0;
+  knob.style.left="50%";
+  stickMetric.textContent="0%";
+}
+
+stick.addEventListener("pointerdown",e=>{
+  dragging=true;
+  stick.setPointerCapture(e.pointerId);
+  setStickFromPointer(e);
+});
+stick.addEventListener("pointermove",e=>{if(dragging)setStickFromPointer(e)});
+stick.addEventListener("pointerup",centerStick);
+stick.addEventListener("pointercancel",centerStick);
+window.addEventListener("pointerup",centerStick);
+
+angleLimit.addEventListener("input",()=>angleVal.textContent=angleLimit.value+"°");
+maxRate.addEventListener("input",()=>rateVal.textContent=maxRate.value+"°/s");
+resetBtn.addEventListener("click",()=>{centerStick();attitude=0});
+modes.forEach(btn=>btn.addEventListener("click",()=>setMode(btn.dataset.mode)));
+
+function update(now){
+  const dt=Math.min((now-lastTime)/1000,.04);
+  lastTime=now;
+  const limit=Number(angleLimit.value);
+  const rate=Number(maxRate.value);
+
+  if(mode==="ANGLE"){
+    const targetAngle=stickX*limit;
+    attitude+=(targetAngle-attitude)*Math.min(1,dt*7.5);
+    attitude=clamp(attitude,-limit,limit);
+    targetMetric.textContent=Math.round(targetAngle)+"°";
+  }
+
+  else if(mode==="HORIZON"){
+    const absStick=Math.abs(stickX);
+
+    if(absStick<=0.65){
+      const targetAngle=(stickX/0.65)*limit;
+      const error=shortestError(targetAngle,attitude);
+      attitude+=error*Math.min(1,dt*6.5);
+      targetMetric.textContent=Math.round(targetAngle)+"°";
+    }else{
+      const sign=Math.sign(stickX);
+      const outer=(absStick-0.65)/0.35;
+      const requestedRate=sign*outer*rate;
+      attitude+=requestedRate*dt;
+      attitude=wrap180(attitude);
+      targetMetric.textContent=Math.round(requestedRate)+"°/s";
+    }
+  }
+
+  else{
+    const requestedRate=stickX*rate;
+    attitude+=requestedRate*dt;
+    attitude=wrap180(attitude);
+    targetMetric.textContent=Math.round(requestedRate)+"°/s";
+  }
+
+  drone.style.transform="rotate("+attitude+"deg)";
+  angleReadout.textContent=Math.round(attitude)+"°";
+  requestAnimationFrame(update);
+}
+
+setMode("ANGLE");
+requestAnimationFrame(update);
+</script>
+</body>
+</html>
