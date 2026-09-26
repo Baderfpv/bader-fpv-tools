@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#070604">
+<title>Motor Mixer Visualizer — BADER FPV TOOLS</title>
+<style>
+:root{
+  --bg:#070604;--card:#100c08;--line:#34271b;--text:#f6efe7;--muted:#998a7c;
+  --orange:#ff8a3d;--orange2:#ffb074;--green:#34d399;--red:#fb7185;--cyan:#22d3ee;--amber:#fbbf24;
+}
+*{box-sizing:border-box} html{background:var(--bg)}
+body{margin:0;min-height:100vh;color:var(--text);font-family:"Segoe UI",Tahoma,Arial,sans-serif;
+background:radial-gradient(circle at 50% -12%,rgba(255,138,61,.14),transparent 35%),linear-gradient(180deg,#0b0805 0%,#070604 56%,#040302 100%)}
+.wrap{width:min(1220px,calc(100% - 28px));margin:0 auto;padding:26px 0 38px}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;flex-wrap:wrap}
+.back{display:inline-flex;color:var(--orange2);text-decoration:none;font-size:12px;font-weight:850;margin-bottom:10px}
+h1{margin:0;color:var(--orange);font-size:clamp(28px,4vw,41px);letter-spacing:-.03em}
+.sub{margin-top:8px;color:var(--muted);font-size:13px;line-height:1.7}
+.badge{display:inline-flex;margin-top:10px;padding:6px 9px;border:1px solid rgba(255,138,61,.25);border-radius:999px;background:rgba(255,138,61,.06);color:var(--orange2);font-size:10px;font-weight:900;direction:ltr}
+.modebox{padding:12px;border:1px solid var(--line);border-radius:15px;background:var(--card);min-width:240px}
+.modebox .title{font-size:10px;color:#d9cabd;font-weight:900;direction:ltr}
+.toggle-row{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:9px}
+.toggle-row span{font-size:10px;color:#8f8074}
+.switch{position:relative;width:48px;height:26px;display:inline-block}.switch input{opacity:0;width:0;height:0}
+.slider{position:absolute;inset:0;background:#241a12;border:1px solid #443121;border-radius:999px;cursor:pointer;transition:.18s}
+.slider:before{content:"";position:absolute;width:18px;height:18px;left:3px;top:3px;border-radius:50%;background:#8e7d6d;transition:.18s}
+.switch input:checked + .slider{background:rgba(255,138,61,.16);border-color:var(--orange)}
+.switch input:checked + .slider:before{transform:translateX(22px);background:var(--orange)}
+.layout{display:grid;grid-template-columns:350px 1fr;gap:14px;margin-top:18px}
+.panel{border:1px solid var(--line);border-radius:17px;background:var(--card);padding:14px}
+.panel h2,.panel h3{margin:0;color:#eadfd5;font-size:13px}
+.control{margin-top:15px;padding-top:14px;border-top:1px solid #2a2017}.control:first-of-type{border-top:none;padding-top:5px}
+.control-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.control-head label{font-size:10px;color:#c6b7aa;font-weight:850}
+.val{min-width:70px;text-align:center;padding:6px 8px;border:1px solid #3b2d20;border-radius:8px;background:#090704;color:#f4ede6;font-size:10px;font-weight:900;direction:ltr}
+input[type=range]{width:100%;margin-top:10px;accent-color:var(--orange)}
+.hint{margin-top:5px;color:#76695e;font-size:9px;line-height:1.5}
+.quick{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-top:14px}
+.quick button,.reset{padding:8px;border:1px solid #3a2b1e;border-radius:9px;background:#0b0805;color:#9d8d7f;font-size:9px;font-weight:850;cursor:pointer}
+.quick button:hover,.reset:hover{border-color:rgba(255,138,61,.55);color:#f3ded0}.reset{width:100%;margin-top:8px;color:var(--orange2)}
+.visual{position:relative;min-height:610px;overflow:hidden}.visual-head{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+.visual-head span{font-size:9px;color:#7f7165;direction:ltr}
+.drone-stage{position:relative;height:420px;margin-top:10px;border:1px solid #2f2419;border-radius:15px;
+background:radial-gradient(circle at center,rgba(255,138,61,.06),transparent 33%),linear-gradient(transparent 49.7%,#17110d 50%,transparent 50.3%),linear-gradient(90deg,transparent 49.7%,#17110d 50%,transparent 50.3%),#090704;overflow:hidden}
+.front{position:absolute;top:12px;left:50%;transform:translateX(-50%);color:#8e7d70;font-size:10px;font-weight:900;letter-spacing:.08em}
+.front:before{content:"↑";display:block;text-align:center;font-size:22px;color:var(--orange)}
+.arm{position:absolute;left:50%;top:50%;width:46%;height:8px;background:#272019;border-radius:999px;transform-origin:0 50%;box-shadow:0 0 0 1px #33281e}
+.arm.a{transform:rotate(45deg)} .arm.b{transform:rotate(135deg)} .arm.c{transform:rotate(225deg)} .arm.d{transform:rotate(315deg)}
+.center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:90px;height:90px;border:1px solid #473221;border-radius:22px;background:#110c08;display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:3}
+.center b{color:var(--orange);font-size:13px}.center small{color:#6f6257;font-size:8px;margin-top:5px;direction:ltr}
+.motor{position:absolute;width:116px;height:116px;border-radius:50%;transform:translate(-50%,-50%);border:1px solid #453224;background:#0c0906;display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:4;transition:.12s;box-shadow:0 0 0 8px rgba(255,138,61,0)}
+.motor .mname{font-size:11px;font-weight:950;direction:ltr}.motor .mpos{font-size:8px;color:#7e6f63;margin-top:2px;direction:ltr}
+.motor .mout{font-size:23px;font-weight:950;margin-top:4px;direction:ltr;color:#fff}.motor .spin{font-size:9px;margin-top:4px;color:#8d7e71;direction:ltr}
+.motor.high{border-color:rgba(52,211,153,.65);box-shadow:0 0 28px rgba(52,211,153,.13)}
+.motor.low{border-color:rgba(34,211,238,.5);box-shadow:0 0 24px rgba(34,211,238,.09)}
+.motor.clip,.motor.saturated{border-color:var(--red);box-shadow:0 0 34px rgba(251,113,133,.18)}
+.motor .sat{display:none;margin-top:4px;padding:3px 6px;border-radius:999px;background:rgba(251,113,133,.12);border:1px solid rgba(251,113,133,.35);color:var(--red);font-size:7px;font-weight:950;direction:ltr}
+.motor.saturated .sat{display:block}
+#m4{left:23%;top:25%} #m2{left:77%;top:25%} #m3{left:23%;top:75%} #m1{left:77%;top:75%}
+.output-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:11px}
+.outcard{padding:10px;border:1px solid #32261b;border-radius:11px;background:#0a0705}
+.outcard b{display:flex;justify-content:space-between;gap:8px;font-size:9px;direction:ltr}.bar{height:7px;background:#1d1610;border-radius:99px;overflow:hidden;margin-top:7px}
+.fill{height:100%;width:0;background:linear-gradient(90deg,var(--orange),var(--amber));border-radius:inherit;transition:.12s}.raw{margin-top:5px;color:#74675c;font-size:8px;direction:ltr;text-align:left}
+.matrix{margin-top:14px;border:1px solid #2f2419;border-radius:14px;overflow:hidden}.matrix-head{padding:10px 12px;border-bottom:1px solid #2a2017;background:#0c0906;display:flex;justify-content:space-between;gap:10px}
+.matrix-head b{font-size:10px;color:#dccfc3}.matrix-head span{font-size:8px;color:#6f6258;direction:ltr}
+table{width:100%;border-collapse:collapse;font-size:9px;direction:ltr;text-align:center} th,td{padding:8px;border-bottom:1px solid #211912;border-left:1px solid #211912}
+th{color:#9f8f80;background:#0a0705}td{color:#d2c5ba}tr:last-child td{border-bottom:none}.plus{color:var(--green);font-weight:900}.minus{color:var(--red);font-weight:900}
+.note{margin-top:10px;color:#75685d;font-size:9px;line-height:1.7}.warn{color:var(--red);font-weight:850}.footer{text-align:center;color:#5f544a;font-size:10px;margin-top:17px}
+@media(max-width:880px){.layout{grid-template-columns:1fr}.visual{min-height:auto}}
+@media(max-width:620px){.wrap{width:min(100% - 18px,560px)}.drone-stage{height:390px}.motor{width:92px;height:92px}.motor .mout{font-size:18px}.output-grid{grid-template-columns:repeat(2,1fr)}#m4{left:22%}#m2{left:78%}#m3{left:22%}#m1{left:78%}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <a class="back" href="../index.html">← BADER FPV TOOLS</a>
+      <h1>Motor Mixer Visualizer</h1>
+      <div class="sub">شوف بالضبط كيف Roll / Pitch / Yaw تغيّر توزيع القوة على محركات Quad X.</div>
+      <span class="badge">BETAFLIGHT QUADX TABLE • LIVE MIX • LOCAL</span>
+    </div>
+    <div class="modebox">
+      <div class="title">QUAD X — Betaflight LEGACY Mixer</div>
+      <div class="toggle-row">
+        <span>Motor direction reversed / Props Out</span>
+        <label class="switch"><input id="yawReverse" type="checkbox"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <span>Airmode</span>
+        <label class="switch"><input id="airmode" type="checkbox" checked><span class="slider"></span></label>
+      </div>
+    </div>
+  </div>
+
+  <div class="layout">
+    <section class="panel">
+      <h2>Mixer Inputs</h2>
+
+      <div class="control">
+        <div class="control-head"><label>Throttle</label><div class="val" id="throttleVal">50%</div></div>
+        <input id="throttle" type="range" min="0" max="100" value="50" step="1">
+        <div class="hint">الـbase output قبل إضافة Roll / Pitch / Yaw.</div>
+      </div>
+
+      <div class="control">
+        <div class="control-head"><label>Roll PID Mix</label><div class="val" id="rollVal">0</div></div>
+        <input id="roll" type="range" min="-50" max="50" value="0" step="1">
+        <div class="hint">قيمة موجبة أو سالبة تُضرب في معامل Roll الرسمي لكل Motor.</div>
+      </div>
+
+      <div class="control">
+        <div class="control-head"><label>Pitch PID Mix</label><div class="val" id="pitchVal">0</div></div>
+        <input id="pitch" type="range" min="-50" max="50" value="0" step="1">
+        <div class="hint">توضح أي المحركات تزيد وأيها تنخفض مع Pitch.</div>
+      </div>
+
+      <div class="control">
+        <div class="control-head"><label>Yaw PID Mix</label><div class="val" id="yawVal">0</div></div>
+        <input id="yaw" type="range" min="-50" max="50" value="0" step="1">
+        <div class="hint">خيار Yaw Motors Reversed يعكس إشارة Yaw مثل Betaflight.</div>
+      </div>
+
+      <div class="hint" style="margin-top:14px">اختبار MAX يعزل محورًا واحدًا فقط ويضع Throttle على 50% حتى يظهر زوج المحركات عند الحد الأعلى والزوج الآخر عند الحد الأدنى.</div>
+      <div class="quick">
+        <button data-set="roll:50">Roll + MAX</button>
+        <button data-set="roll:-50">Roll − MAX</button>
+        <button data-set="pitch:50">Pitch + MAX</button>
+        <button data-set="pitch:-50">Pitch − MAX</button>
+        <button data-set="yaw:50">Yaw + MAX</button>
+        <button data-set="yaw:-50">Yaw − MAX</button>
+      </div>
+      <button class="reset" id="resetBtn">Reset — 50% Throttle</button>
+
+      <div class="note">
+        قيم Roll/Pitch/Yaw هنا تمثل <b>normalized PID mixer contributions</b> وليست Stick %.
+        بعد حساب Quad X coefficients تطبّق الأداة منطق <b>Betaflight LEGACY mixer normalization</b> وحماية الـThrottle من القص.
+      </div>
+    </section>
+
+    <section class="panel visual">
+      <div class="visual-head">
+        <h3>Quad X Motor Output</h3>
+        <span id="status">No mixer adjustment</span>
+      </div>
+
+      <div class="drone-stage">
+        <div class="front">FRONT</div>
+        <div class="arm a"></div><div class="arm b"></div><div class="arm c"></div><div class="arm d"></div>
+        <div class="center"><b>QUAD X</b><small>M4 · M2 / M3 · M1</small></div>
+
+        <div class="motor" id="m4"><div class="mname">M4</div><div class="mpos">FRONT LEFT</div><div class="mout">50%</div><div class="sat">SATURATED</div><div class="sat">SATURATED</div><div class="sat">SATURATED</div><div class="sat">SATURATED</div><div class="spin">CCW ↺</div></div>
+        <div class="motor" id="m2"><div class="mname">M2</div><div class="mpos">FRONT RIGHT</div><div class="mout">50%</div><div class="spin">CW ↻</div></div>
+        <div class="motor" id="m3"><div class="mname">M3</div><div class="mpos">REAR LEFT</div><div class="mout">50%</div><div class="spin">CW ↻</div></div>
+        <div class="motor" id="m1"><div class="mname">M1</div><div class="mpos">REAR RIGHT</div><div class="mout">50%</div><div class="spin">CCW ↺</div></div>
+      </div>
+
+      <div class="output-grid">
+        <div class="outcard"><b><span>M1 Rear Right</span><span id="o1">50%</span></b><div class="bar"><div class="fill" id="b1"></div></div><div class="raw" id="r1">Mix 0</div><div class="raw" id="s1"></div></div>
+        <div class="outcard"><b><span>M2 Front Right</span><span id="o2">50%</span></b><div class="bar"><div class="fill" id="b2"></div></div><div class="raw" id="r2">Mix 0</div><div class="raw" id="s2"></div></div>
+        <div class="outcard"><b><span>M3 Rear Left</span><span id="o3">50%</span></b><div class="bar"><div class="fill" id="b3"></div></div><div class="raw" id="r3">Mix 0</div><div class="raw" id="s3"></div></div>
+        <div class="outcard"><b><span>M4 Front Left</span><span id="o4">50%</span></b><div class="bar"><div class="fill" id="b4"></div></div><div class="raw" id="r4">Mix 0</div><div class="raw" id="s4"></div></div>
+      </div>
+
+      <div class="matrix">
+        <div class="matrix-head"><b>Official Quad X mixer coefficients</b><span>Throttle / Roll / Pitch / Yaw</span></div>
+        <table>
+          <thead><tr><th>Motor</th><th>Position</th><th>Throttle</th><th>Roll</th><th>Pitch</th><th>Yaw</th></tr></thead>
+          <tbody>
+            <tr><td>M1</td><td>Rear Right</td><td>+1</td><td class="minus">−1</td><td class="plus">+1</td><td class="minus">−1</td></tr>
+            <tr><td>M2</td><td>Front Right</td><td>+1</td><td class="minus">−1</td><td class="minus">−1</td><td class="plus">+1</td></tr>
+            <tr><td>M3</td><td>Rear Left</td><td>+1</td><td class="plus">+1</td><td class="plus">+1</td><td class="plus">+1</td></tr>
+            <tr><td>M4</td><td>Front Left</td><td>+1</td><td class="plus">+1</td><td class="minus">−1</td><td class="minus">−1</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note">
+        الحساب يتبع ترتيب Betaflight: أولًا Roll/Pitch/Yaw mixer، ثم normalization، ثم تقييد Throttle.
+        في <b>أمر محور واحد فقط</b> على Quad X تكون الاستجابة متناظرة: محركان يزيدان ومحركان ينخفضان.
+        لذلك عند الوصول للحد الأعلى في اختبار Roll أو Pitch أو Yaw المعزول، يظهر <b>محركان معًا عند 100%</b>.
+        عند خلط أكثر من محور في نفس الوقت قد تختلف القيم لأن معاملات المحاور تُجمع.
+        لا يشمل هذا العرض Thrust Linearization أو Dynamic Idle أو 3D mode أو تحويل القيمة إلى DShot endpoints.
+        خيار Props Out يغيّر إشارة Yaw المتوقعة، لكنه لا يعكس المحركات فعليًا؛ اتجاه الـESC يجب أن يطابق الإعداد.
+      </div>
+    </section>
+  </div>
+  <div class="footer">BADER FPV TOOLS — Motor Mixer Visualizer</div>
+</div>
+
+<script>
+(function(){
+  const $=s=>document.querySelector(s);
+  const coeff=[
+    {id:1,r:-1,p: 1,y:-1},
+    {id:2,r:-1,p:-1,y: 1},
+    {id:3,r: 1,p: 1,y: 1},
+    {id:4,r: 1,p:-1,y:-1}
+  ];
+  const throttle=$('#throttle'),roll=$('#roll'),pitch=$('#pitch'),yaw=$('#yaw'),yawReverse=$('#yawReverse'),airmode=$('#airmode');
+
+  function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+  function n(el){return Number(el.value)}
+  function signed(v){return (v>0?'+':'')+v}
+
+  function renderSpin(){
+    const reversed=yawReverse.checked;
+    // Props In (yaw_motors_reversed OFF): FL/RR CW, FR/RL CCW.
+    // Props Out (yaw_motors_reversed ON): exact opposite.
+    const defaultDirs={1:'CW ↻',2:'CCW ↺',3:'CCW ↺',4:'CW ↻'};
+    const reversedDirs={1:'CCW ↺',2:'CW ↻',3:'CW ↻',4:'CCW ↺'};
+    coeff.forEach(m=>$('#m'+m.id+' .spin').textContent=(reversed?reversedDirs:defaultDirs)[m.id]);
+  }
+
+  function render(){
+    const t=n(throttle)/100,r=n(roll)/100,p=n(pitch)/100,yInput=n(yaw)/100;
+
+    // Betaflight mixer.c:
+    // yaw PID is negated when yaw_motors_reversed is OFF.
+    const yApplied=yawReverse.checked?yInput:-yInput;
+
+    $('#throttleVal').textContent=Math.round(t*100)+'%';
+    $('#rollVal').textContent=signed(Math.round(r*100));
+    $('#pitchVal').textContent=signed(Math.round(p*100));
+    $('#yawVal').textContent=signed(Math.round(yInput*100));
+
+    const rawMix=coeff.map(m=>r*m.r+p*m.p+yApplied*m.y);
+
+    // Betaflight initializes motorMixMin/Max to zero.
+    const mixMin=Math.min(0,...rawMix);
+    const mixMax=Math.max(0,...rawMix);
+    const mixRange=mixMax-mixMin;
+
+    // applyMixerAdjustment() for the default LEGACY mixer.
+    // With Airmode off and throttle < 0.5, authority scales from 0.5 to 1.0.
+    const transition=airmode.checked ? 1 : (t<0.5 ? 0.5+t : 1);
+    const normalization=(mixRange>1) ? transition/mixRange : transition;
+
+    const normalizedMix=rawMix.map(v=>v*normalization);
+    const normalizedMin=mixMin*normalization;
+    const normalizedMax=mixMax*normalization;
+    const adjustedThrottle=clamp(t,-normalizedMin,1-normalizedMax);
+
+    const outputs=coeff.map((m,i)=>{
+      const out=clamp(adjustedThrottle+normalizedMix[i],0,1);
+      return {...m,mix:rawMix[i],normalizedMix:normalizedMix[i],out:out*100};
+    });
+
+    const avg=outputs.reduce((s,m)=>s+m.out,0)/outputs.length;
+    const saturated=outputs.filter(m=>m.out>=99.95);
+    const bottomed=outputs.filter(m=>m.out<=0.05);
+
+    outputs.forEach(m=>{
+      const motor=$('#m'+m.id),v=Math.round(m.out);
+      const isSat=m.out>=99.95;
+      const isBottom=m.out<=0.05;
+
+      $('#m'+m.id+' .mout').textContent=v+'%';
+      $('#o'+m.id).textContent=v+'%';
+      $('#b'+m.id).style.width=v+'%';
+      $('#r'+m.id).textContent='Mix '+signed(Math.round(m.mix*100))+'%';
+      $('#s'+m.id).textContent=isSat?'SATURATED @ MAX':(isBottom?'AT MIN OUTPUT':'');
+
+      motor.classList.remove('high','low','clip','saturated');
+      if(isSat)motor.classList.add('saturated');
+      else if(m.out>avg+4)motor.classList.add('high');
+      else if(m.out<avg-4)motor.classList.add('low');
+    });
+
+    const activeAxes=[['Roll',r],['Pitch',p],['Yaw',yInput]].filter(([,v])=>Math.abs(v)>0.0001);
+    const isolatedAxis=activeAxes.length===1;
+
+    const notes=[];
+    if(saturated.length){
+      if(isolatedAxis && saturated.length===2){
+        notes.push('PAIR SATURATED — '+saturated.map(m=>'M'+m.id+' 100%').join(' + '));
+      }else{
+        notes.push('MIXER SATURATED — '+saturated.map(m=>'M'+m.id+' 100%').join(' · '));
+      }
+    }
+    if(bottomed.length){
+      notes.push('AT MIN — '+bottomed.map(m=>'M'+m.id+' 0%').join(' + '));
+    }
+    if(normalization<0.999)notes.push('Mixer normalized ×'+normalization.toFixed(2));
+    if(Math.abs(adjustedThrottle-t)>0.0005){
+      notes.push('Throttle '+Math.round(t*100)+'% → '+Math.round(adjustedThrottle*100)+'%');
+    }
+    if(!airmode.checked && t<0.5)notes.push('Airmode transition ×'+transition.toFixed(2));
+
+    $('#status').textContent=notes.length?notes.join(' · '):'No saturation';
+    $('#status').style.color=saturated.length?'#fb7185':(notes.length?'#fbbf24':'#34d399');
+    renderSpin();
+  }
+
+  [throttle,roll,pitch,yaw].forEach(el=>el.addEventListener('input',render));
+  yawReverse.addEventListener('change',render);
+  airmode.addEventListener('change',render);
+
+  document.querySelectorAll('[data-set]').forEach(b=>b.onclick=()=>{
+    const [key,val]=b.dataset.set.split(':');
+    throttle.value=50;
+    roll.value=0;pitch.value=0;yaw.value=0;
+    ({roll,pitch,yaw})[key].value=val;
+    render();
+  });
+
+  $('#resetBtn').onclick=()=>{
+    throttle.value=50;roll.value=0;pitch.value=0;yaw.value=0;yawReverse.checked=false;airmode.checked=true;render();
+  };
+
+  render();
+})();
+</script>
+</body>
+</html>
