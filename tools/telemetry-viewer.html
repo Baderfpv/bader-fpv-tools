@@ -370,8 +370,13 @@ button.sensor-chip.active{border-color:var(--orange)!important;box-shadow:0 0 0 
 
   function detectedKeys(){
     const activeGps=gpsActive();
+    const hiddenControlFields=new Set([
+      'Ail','Ele','Thr','Rud','Aileron','Elevator','Throttle','Rudder',
+      'Pitch','Roll','Yaw'
+    ]);
     return headers.filter(function(key){
       if(!key||/^(Date|Time|Timestamp|FM|Mode)$/i.test(key))return false;
+      if(hiddenControlFields.has(key))return false;
       if(isGpsKey(key)&&!activeGps)return false;
       return rows.some(function(r){return String(r[key]??'').trim()!==''});
     });
