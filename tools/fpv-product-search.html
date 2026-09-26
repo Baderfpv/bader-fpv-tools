@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#070707">
+<title>محرك بحث منتجات FPV — BADER FPV TOOLS</title>
+<style>
+:root{--bg:#060606;--panel:#0d0d0d;--line:#282828;--text:#f4f4f4;--muted:#818181;--red:#ff5a66;--red2:#ff8a93;--green:#37d67a}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;min-height:100vh;color:var(--text);font-family:"Segoe UI",Tahoma,Arial,sans-serif;background:radial-gradient(circle at 50% -10%,rgba(255,90,102,.13),transparent 36%),linear-gradient(180deg,#0a0a0a,#050505 70%)}
+.wrap{width:min(1120px,calc(100% - 28px));margin:auto;padding:28px 0 40px}
+.back{display:inline-flex;color:var(--red2);text-decoration:none;font-size:12px;font-weight:850;margin-bottom:10px}
+.hero{text-align:center;padding:22px 0 12px}
+h1{margin:0;color:var(--red);font-size:clamp(31px,5vw,50px);letter-spacing:-.04em}
+.sub{margin:10px auto 0;color:#969696;font-size:13px;line-height:1.7;max-width:720px}
+.badge{display:inline-flex;margin-top:12px;padding:6px 10px;border:1px solid rgba(255,90,102,.25);border-radius:999px;background:rgba(255,90,102,.06);color:var(--red2);font-size:10px;font-weight:900;direction:ltr}
+.searchbox{margin:20px auto 0;max-width:920px;padding:13px;border:1px solid #2c2c2c;background:#0c0c0c;border-radius:18px;box-shadow:0 22px 70px rgba(0,0,0,.28)}
+.searchrow{display:grid;grid-template-columns:1fr auto;gap:9px;direction:ltr}
+.searchrow input{width:100%;height:52px;border:1px solid #333;border-radius:13px;background:#070707;color:#fff;padding:0 16px;font-size:15px;outline:none}
+.searchrow input:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(255,90,102,.08)}
+.searchrow button{height:52px;padding:0 22px;border:0;border-radius:13px;background:var(--red);color:#fff;font-weight:950;font-size:12px;cursor:pointer}
+.searchrow button:hover{filter:brightness(1.08)}
+.examples{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px;direction:ltr}
+.chip{padding:6px 9px;border:1px solid #2c2c2c;border-radius:999px;background:#090909;color:#858585;font-size:9px;cursor:pointer}
+.chip:hover{border-color:#474747;color:#ccc}
+.section{margin-top:22px}
+.section-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:11px}
+.section-head h2{margin:0;font-size:13px;color:#ddd}
+.section-head span{font-size:9px;color:#696969}
+.ready{margin-bottom:11px;padding:10px 12px;border:1px solid rgba(55,214,122,.25);border-radius:12px;background:rgba(55,214,122,.045);color:#7e9386;font-size:9px;display:none}
+.ready.visible{display:block}
+.ready b{color:#dfe8e2;direction:ltr}
+.stores{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.store{position:relative;display:flex;flex-direction:column;min-height:224px;border:1px solid var(--line);border-radius:18px;padding:16px;overflow:hidden;background:linear-gradient(180deg,rgba(255,255,255,.018),transparent 55%),var(--panel);transition:.16s}
+.store:before{content:"";position:absolute;inset:0 0 auto 0;height:2px;background:linear-gradient(90deg,transparent,rgba(255,90,102,.8),transparent)}
+.store:hover{transform:translateY(-3px);border-color:#414141;box-shadow:0 18px 40px rgba(0,0,0,.25)}
+.store-top{display:flex;align-items:center;gap:12px;direction:ltr;text-align:left}
+.logo{position:relative;flex:0 0 60px;width:60px;height:60px;border-radius:16px;border:1px solid #303030;background:#fff;display:grid;place-items:center;overflow:hidden}
+.logo img{width:40px;height:40px;object-fit:contain;position:relative;z-index:2}
+.logo-fallback{position:absolute;inset:0;display:grid;place-items:center;color:#222;font-size:13px;font-weight:950;z-index:1}
+.store-copy{min-width:0}
+.store-name{display:block;font-size:14px;font-weight:950;color:#f3f3f3;direction:ltr}
+.store-domain{display:block;margin-top:3px;color:#696969;font-size:8px;direction:ltr}
+.store-desc{margin-top:14px;color:#858585;font-size:9px;line-height:1.65;min-height:34px}
+.store-meta{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:auto;padding-top:15px}
+.tag{display:inline-flex;padding:5px 8px;border-radius:8px;background:#151515;border:1px solid #242424;color:#858585;font-size:8px;direction:ltr}
+.kind{font-size:8px;color:#666;direction:ltr}
+.store-open{display:block;width:100%;margin-top:11px;padding:10px 12px;text-align:center;border:1px solid rgba(255,90,102,.34);border-radius:11px;background:rgba(255,90,102,.08);color:var(--red2);font-size:10px;font-weight:950;text-decoration:none;transition:.15s}
+.store-open:hover{background:var(--red);border-color:var(--red);color:#fff}
+.store-open.disabled{opacity:.42;cursor:default}
+.store-open.disabled:hover{background:rgba(255,90,102,.08);border-color:rgba(255,90,102,.34);color:var(--red2)}
+.history{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px;direction:ltr}
+.history button{padding:7px 10px;border:1px solid #282828;border-radius:9px;background:#0a0a0a;color:#777;font-size:8px;cursor:pointer}
+.history button:hover{border-color:#444;color:#bbb}
+.note{margin-top:18px;padding:12px 13px;border:1px solid #252525;border-radius:13px;background:#090909;color:#777;font-size:9px;line-height:1.75}
+.note b{color:#aaa}
+.footer{text-align:center;color:#505050;font-size:9px;margin-top:20px;direction:ltr}
+@media(max-width:900px){.stores{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:650px){.stores{grid-template-columns:1fr}.searchrow{grid-template-columns:1fr}.searchrow button{width:100%}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← BADER FPV TOOLS</a>
+  <section class="hero">
+    <h1>محرك بحث منتجات FPV</h1>
+    <div class="sub">اكتب اسم القطعة مرة واحدة، ثم افتح نتائج البحث مباشرة في أشهر متاجر FPV.</div>
+    <span class="badge">ONE SEARCH • MULTIPLE FPV STORES • LOCAL</span>
+  </section>
+  <section class="searchbox">
+    <div class="searchrow">
+      <input id="q" type="search" autocomplete="off" placeholder="مثال: HDZero Freestyle V2 / RP4TD / 2207 1950KV">
+      <button id="searchBtn">تجهيز نتائج البحث</button>
+    </div>
+    <div class="examples">
+      <button class="chip" data-q="HDZero Freestyle V2">HDZero Freestyle V2</button>
+      <button class="chip" data-q="RadioMaster RP4TD">RadioMaster RP4TD</button>
+      <button class="chip" data-q="2207 1950KV motor">2207 1950KV</button>
+      <button class="chip" data-q="DJI O4 Air Unit Pro">DJI O4 Air Unit Pro</button>
+      <button class="chip" data-q="5 inch FPV propeller">5&quot; Props</button>
+    </div>
+  </section>
+  <section class="section">
+    <div class="section-head"><h2>المتاجر</h2><span>5 متاجر</span></div>
+    <div class="ready" id="ready">جاهز للبحث عن: <b id="readyQuery"></b></div>
+    <div class="stores">
+      <article class="store">
+        <div class="store-top"><div class="logo"><span class="logo-fallback">G</span><img alt="GetFPV" src="https://www.google.com/s2/favicons?domain=getfpv.com&sz=128"></div><div class="store-copy"><span class="store-name">GetFPV</span><span class="store-domain">getfpv.com</span></div></div>
+        <div class="store-desc">قطع FPV، إلكترونيات، كاميرات، أنظمة فيديو ومكونات بناء الدرون.</div>
+        <div class="store-meta"><span class="tag">USA</span><span class="kind">FPV STORE</span></div>
+        <a class="store-open disabled" data-store="getfpv" href="#">اكتب المنتج أولًا</a>
+      </article>
+      <article class="store">
+        <div class="store-top"><div class="logo"><span class="logo-fallback">RDQ</span><img alt="RaceDayQuads" src="https://www.google.com/s2/favicons?domain=racedayquads.com&sz=128"></div><div class="store-copy"><span class="store-name">RaceDayQuads</span><span class="store-domain">racedayquads.com</span></div></div>
+        <div class="store-desc">قطع Racing وFreestyle ومكونات بناء وصيانة الدرون.</div>
+        <div class="store-meta"><span class="tag">USA</span><span class="kind">RACING / FPV</span></div>
+        <a class="store-open disabled" data-store="rdq" href="#">اكتب المنتج أولًا</a>
+      </article>
+      <article class="store">
+        <div class="store-top"><div class="logo"><span class="logo-fallback">P</span><img alt="Pyrodrone" src="https://www.google.com/s2/favicons?domain=pyrodrone.com&sz=128"></div><div class="store-copy"><span class="store-name">Pyrodrone</span><span class="store-domain">pyrodrone.com</span></div></div>
+        <div class="store-desc">معدات FPV وقطع متخصصة للمشاريع والـFreestyle والسباقات.</div>
+        <div class="store-meta"><span class="tag">USA</span><span class="kind">FPV PARTS</span></div>
+        <a class="store-open disabled" data-store="pyro" href="#">اكتب المنتج أولًا</a>
+      </article>
+      <article class="store">
+        <div class="store-top"><div class="logo"><span class="logo-fallback">RR</span><img alt="Rotor Riot" src="https://www.google.com/s2/favicons?domain=rotorriot.com&sz=128"></div><div class="store-copy"><span class="store-name">Rotor Riot</span><span class="store-domain">rotorriot.com</span></div></div>
+        <div class="store-desc">معدات FPV، درونات جاهزة، قطع بناء وإكسسوارات.</div>
+        <div class="store-meta"><span class="tag">USA</span><span class="kind">FPV GEAR</span></div>
+        <a class="store-open disabled" data-store="rotor" href="#">اكتب المنتج أولًا</a>
+      </article>
+      <article class="store">
+        <div class="store-top"><div class="logo"><span class="logo-fallback">AE</span><img alt="AliExpress" src="https://www.google.com/s2/favicons?domain=aliexpress.com&sz=128"></div><div class="store-copy"><span class="store-name">AliExpress</span><span class="store-domain">aliexpress.com</span></div></div>
+        <div class="store-desc">سوق عالمي واسع لقطع FPV والإلكترونيات والإكسسوارات.</div>
+        <div class="store-meta"><span class="tag">GLOBAL</span><span class="kind">MARKETPLACE</span></div>
+        <a class="store-open disabled" data-store="ali" href="#">اكتب المنتج أولًا</a>
+      </article>
+    </div>
+  </section>
+  <section class="section">
+    <div class="section-head"><h2>آخر عمليات البحث</h2><span>محفوظة في متصفحك فقط</span></div>
+    <div class="history" id="history"></div>
+  </section>
+  <div class="note"><b>مهم:</b> الأداة لا تسحب الأسعار أو المخزون من المتاجر حاليًا. هي تبني رابط البحث لكل متجر وتفتح النتائج الأصلية مباشرة.</div>
+  <div class="footer">BADER FPV TOOLS — محرك بحث منتجات FPV</div>
+</div>
+<script>
+(function(){
+  const $=s=>document.querySelector(s);
+  const q=$('#q');
+  const stores={
+    getfpv:x=>'https://www.getfpv.com/catalogsearch/result/?q='+encodeURIComponent(x),
+    rdq:x=>'https://www.racedayquads.com/search?q='+encodeURIComponent(x)+'&type=product',
+    pyro:x=>'https://pyrodrone.com/search?q='+encodeURIComponent(x)+'&type=product',
+    rotor:x=>'https://rotorriot.com/search?q='+encodeURIComponent(x)+'&type=product',
+    ali:x=>'https://www.aliexpress.com/w/wholesale-'+encodeURIComponent(x.replace(/\s+/g,'-'))+'.html?SearchText='+encodeURIComponent(x)
+  };
+  function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+  function saveHistory(term){let h=[];try{h=JSON.parse(localStorage.getItem('baderFpvShopSearch')||'[]')}catch(e){}h=[term,...h.filter(x=>x.toLowerCase()!==term.toLowerCase())].slice(0,7);localStorage.setItem('baderFpvShopSearch',JSON.stringify(h));renderHistory()}
+  function renderHistory(){let h=[];try{h=JSON.parse(localStorage.getItem('baderFpvShopSearch')||'[]')}catch(e){}$('#history').innerHTML=h.length?h.map(x=>'<button data-history="'+encodeURIComponent(x)+'">'+escapeHtml(x)+'</button>').join(''):'<span style="color:#5f5f5f;font-size:9px">لا توجد عمليات بحث سابقة</span>';document.querySelectorAll('[data-history]').forEach(b=>b.onclick=()=>{q.value=decodeURIComponent(b.dataset.history);prepare()})}
+  function clearLinks(){document.querySelectorAll('[data-store]').forEach(a=>{a.href='#';a.textContent='اكتب المنتج أولًا';a.classList.add('disabled');a.removeAttribute('target');a.removeAttribute('rel')});$('#ready').classList.remove('visible')}
+  function prepare(){const term=q.value.trim();if(!term){q.focus();return false}document.querySelectorAll('[data-store]').forEach(a=>{a.href=stores[a.dataset.store](term);a.textContent='فتح نتائج البحث ↗';a.classList.remove('disabled');a.target='_blank';a.rel='noopener'});$('#readyQuery').textContent=term;$('#ready').classList.add('visible');saveHistory(term);return true}
+  document.querySelectorAll('[data-store]').forEach(a=>{a.addEventListener('click',e=>{if(a.classList.contains('disabled')){e.preventDefault();q.focus()}})});
+  document.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{q.value=b.dataset.q;prepare()});
+  $('#searchBtn').onclick=prepare;
+  q.addEventListener('keydown',e=>{if(e.key==='Enter')prepare()});
+  q.addEventListener('input',clearLinks);
+  renderHistory();
+})();
+</script>
+</body>
+</html>
