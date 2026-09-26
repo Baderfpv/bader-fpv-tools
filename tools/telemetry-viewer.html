@@ -62,6 +62,16 @@ canvas{width:100%;height:440px;display:block;border-radius:10px;background:#0909
 .footer{font-size:12px;color:#656565;text-align:center;margin:18px 0 6px}
 .badge{display:inline-flex;margin-top:10px;padding:6px 9px;border:1px solid rgba(255,122,0,.22);border-radius:999px;color:var(--orange2);font-size:11px;font-weight:800;background:rgba(255,122,0,.06)}
 
+
+.upload{display:flex;gap:9px;align-items:stretch;flex-wrap:wrap}
+.filepick{display:flex;flex-direction:column;gap:4px;min-width:210px;padding:9px 11px;border:1px solid #242424;border-radius:13px;background:#0b0b0b}
+.filepick strong{color:#e8e8e8;font-size:11px}
+.filepick small{color:#6f6f6f;font-size:9px}
+.filepick input{max-width:235px;color:#999;font-size:10px}
+.fly-info{margin-top:10px;padding:10px 12px;border:1px solid #202020;border-radius:13px;background:#090909;color:#777;font-size:11px;line-height:1.6}
+.fly-info.ok{color:#b9eccc;border-color:rgba(52,211,153,.22);background:rgba(52,211,153,.035)}
+.fly-info b{color:#ededed}
+
 .sensor-panel{margin:12px 0 0;padding:13px 14px;border:1px solid #202020;border-radius:15px;background:#0a0a0a}
 .sensor-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}
 .sensor-head b{font-size:12px}.sensor-head span{font-size:10px;color:#666}
@@ -88,7 +98,16 @@ canvas{width:100%;height:440px;display:block;border-radius:10px;background:#0909
       <span class="badge">LOCAL • FREE • NO UPLOAD</span>
     </div>
     <div class="upload">
-      <input id="fileInput" type="file" accept=".csv,text/csv">
+      <label class="filepick">
+        <strong>TeleLog CSV — مطلوب</strong>
+        <small>بيانات Telemetry من EdgeTX / tellog.lua</small>
+        <input id="fileInput" type="file" accept=".csv,text/csv">
+      </label>
+      <label class="filepick">
+        <strong>flylog.csv — اختياري</strong>
+        <small>اسم الموديل ووقت Arm / Disarm ومدة الرحلة</small>
+        <input id="flyInput" type="file" accept=".csv,text/csv">
+      </label>
       <button id="resetBtn" type="button">إعادة ضبط</button>
     </div>
   </div>
@@ -113,6 +132,8 @@ canvas{width:100%;height:440px;display:block;border-radius:10px;background:#0909
     <div class="sensor-bar" id="sensorBar"><span class="empty-note">لم يتم تحميل ملف بعد.</span></div>
   </div>
 
+  <div class="fly-info" id="flyInfo">flylog.csv اختياري — يمكنك رفعه قبل أو بعد TeleLog وسيتم ربط الرحلة تلقائيًا.</div>
+
   <div class="chart-card">
     <div class="chart-head">
       <strong id="fileName">اختر ملف TeleLog.csv</strong>
@@ -128,6 +149,8 @@ canvas{width:100%;height:440px;display:block;border-radius:10px;background:#0909
 <script>
 (function(){
   const input=document.getElementById('fileInput');
+  const flyInput=document.getElementById('flyInput');
+  const flyInfo=document.getElementById('flyInfo');
   const canvas=document.getElementById('chart');
   const ctx=canvas.getContext('2d');
   const empty=document.getElementById('empty');
@@ -141,7 +164,7 @@ canvas{width:100%;height:440px;display:block;border-radius:10px;background:#0909
   const sensorBar=document.getElementById('sensorBar');
   const sensorCount=document.getElementById('sensorCount');
 
-  let rows=[],headers=[],hoverIndex=null;
+  let rows=[],headers=[],hoverIndex=null,teleFileName='',flyRows=[],flyHeaders=[];
   const seriesMeta={
     RQly:{label:'RQly',color:'#ff545a',group:'rf'},
     TQly:{label:'TQly',color:'#a879ff',group:'rf'},
@@ -181,6 +204,100 @@ canvas{width:100%;height:440px;display:block;border-radius:10px;background:#0909
       headers.forEach(function(h,i){obj[h]=vals[i]??''});
       return obj;
     });
+  }
+
+  function parseOtherCSV(text){
+    const lines=text.replace(/\r/g,'').split('\n').filter(function(x){return x.trim().length});
+    if(lines.length<2)throw new Error('flylog.csv لا يحتوي بيانات كافية');
+    const hs=splitCSVLine(lines[0]).map(function(x){return x.trim()});
+    const rs=lines.slice(1).map(function(line){
+      const vals=splitCSVLine(line),obj={};
+      hs.forEach(function(h,i){obj[h]=vals[i]??''});
+      return obj;
+    });
+    return {headers:hs,rows:rs};
+  }
+
+  function secondsOfDay(t){
+    const m=String(t||'').match(/^(\d{1,2}):(\d{2}):(\d{2})$/);
+    return m?(Number(m[1])*3600+Number(m[2])*60+Number(m[3])):null;
+  }
+
+  function teleDuration(){
+    if(rows.length<2||!headers.includes('time'))return null;
+    const a=num(rows[0].time),b=num(rows[rows.length-1].time);
+    if(a===null||b===null||b<a)return null;
+    return (b-a)/1000000;
+  }
+
+  function filenameDateTime(){
+    const m=String(teleFileName||'').match(/(\d{4})(\d{2})(\d{2})[_-](\d{2})(\d{2})(\d{2})/);
+    if(!m)return null;
+    return {
+      date:m[1]+'-'+m[2]+'-'+m[3],
+      sec:Number(m[4])*3600+Number(m[5])*60+Number(m[6])
+    };
+  }
+
+  function matchFlyLog(){
+    if(!flyRows.length)return null;
+    const stamp=filenameDateTime();
+    let candidates=flyRows.slice();
+
+    if(stamp&&flyHeaders.includes('Date')){
+      const sameDate=candidates.filter(function(r){return String(r.Date||'')===stamp.date});
+      if(sameDate.length)candidates=sameDate;
+    }
+
+    if(stamp&&flyHeaders.includes('Timestamp-TO')){
+      let best=null,bestDiff=Infinity;
+      candidates.forEach(function(r){
+        const s=secondsOfDay(r['Timestamp-TO']);
+        if(s===null)return;
+        const d=Math.abs(s-stamp.sec);
+        if(d<bestDiff){bestDiff=d;best=r}
+      });
+      if(best&&bestDiff<=5)return best;
+    }
+
+    const td=teleDuration();
+    if(td!==null&&flyHeaders.includes('Duration')){
+      let best=null,bestDiff=Infinity;
+      candidates.forEach(function(r){
+        const d=num(r.Duration);
+        if(d===null)return;
+        const diff=Math.abs(d-td);
+        if(diff<bestDiff){bestDiff=diff;best=r}
+      });
+      if(best)return best;
+    }
+    return candidates[candidates.length-1]||null;
+  }
+
+  function updateFlyInfo(){
+    if(!flyRows.length){
+      flyInfo.className='fly-info';
+      flyInfo.textContent='flylog.csv اختياري — يمكنك رفعه قبل أو بعد TeleLog وسيتم ربط الرحلة تلقائيًا.';
+      return;
+    }
+    if(!rows.length){
+      flyInfo.className='fly-info';
+      flyInfo.textContent='تم تحميل flylog.csv. ارفع TeleLog ليتم اختيار الرحلة المطابقة تلقائيًا.';
+      return;
+    }
+    const m=matchFlyLog();
+    if(!m){
+      flyInfo.className='fly-info';
+      flyInfo.textContent='تم تحميل flylog.csv لكن لم يتم العثور على سجل رحلة مطابق.';
+      return;
+    }
+    const bits=[];
+    if(m.ModelName)bits.push('Model: '+m.ModelName);
+    if(m['Timestamp-TO'])bits.push('Arm: '+m['Timestamp-TO']);
+    if(m['Timestamp-LDG'])bits.push('Disarm: '+m['Timestamp-LDG']);
+    if(m.Duration)bits.push('Duration: '+m.Duration+' s');
+    flyInfo.className='fly-info ok';
+    flyInfo.innerHTML='<b>flylog مرتبط ✓</b> — '+bits.join(' • ');
   }
 
   function num(v){
@@ -364,24 +481,40 @@ canvas{width:100%;height:440px;display:block;border-radius:10px;background:#0909
   }
 
   function reset(){
-    rows=[];headers=[];hoverIndex=null;input.value='';canvas.hidden=true;empty.hidden=false;
+    rows=[];headers=[];hoverIndex=null;teleFileName='';flyRows=[];flyHeaders=[];input.value='';flyInput.value='';canvas.hidden=true;empty.hidden=false;
     fileName.textContent='اختر ملف TeleLog.csv';
     rqlyVal.textContent=tpwrVal.textContent=dynVal.textContent='—';
     dynVal.className='value';dynSeq.textContent='TPWR غير مقروء';
     toolbar.innerHTML='<b>الرسوم:</b><span class="empty-note">ارفع الملف لعرض المستشعرات المتوفرة فقط.</span>';
     sensorCount.textContent='0 detected';
     sensorBar.innerHTML='<span class="empty-note">لم يتم تحميل ملف بعد.</span>';
+    updateFlyInfo();
   }
 
   input.addEventListener('change',async function(){
     const f=input.files&&input.files[0];if(!f)return;
     try{
-      const text=await f.text();rows=parseCSV(text);
+      const text=await f.text();rows=parseCSV(text);teleFileName=f.name;
       if(!headers.includes('RQly')&&!headers.includes('TPWR'))throw new Error('هذا الملف لا يبدو TeleLog من tellog.lua');
       fileName.textContent=f.name+' — '+rows.length.toLocaleString('en-US')+' samples';
-      renderAvailable();renderToolbar();
+      renderAvailable();renderToolbar();updateFlyInfo();
       empty.hidden=true;canvas.hidden=false;hoverIndex=null;setStats();draw();
     }catch(e){reset();alert(e.message||'تعذر قراءة الملف')}
+  });
+
+
+  flyInput.addEventListener('change',async function(){
+    const f=flyInput.files&&flyInput.files[0];if(!f)return;
+    try{
+      const text=await f.text();
+      const parsed=parseOtherCSV(text);
+      flyHeaders=parsed.headers;flyRows=parsed.rows;
+      if(!flyHeaders.includes('Duration')&&!flyHeaders.includes('ModelName'))throw new Error('هذا الملف لا يبدو flylog.csv');
+      updateFlyInfo();
+    }catch(e){
+      flyRows=[];flyHeaders=[];flyInput.value='';updateFlyInfo();
+      alert(e.message||'تعذر قراءة flylog.csv');
+    }
   });
 
   toolbar.addEventListener('change',function(e){if(e.target&&e.target.classList.contains('seriesToggle'))draw()});
