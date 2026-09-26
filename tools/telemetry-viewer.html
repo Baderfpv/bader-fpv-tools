@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#050505">
-<title>BADER FPV — EdgeTX Telemetry Viewer</title>
+<title>ELRS Telemetry Analyzer — BADER FPV TOOLS</title>
 <style>
 :root{
   --bg:#050505;--card:#0d0d0d;--card2:#101010;--text:#ededed;--muted:#858585;
@@ -61,6 +61,20 @@ canvas{width:100%;height:440px;display:block;border-radius:10px;background:#0909
 .empty{padding:76px 20px;text-align:center;color:var(--muted)}
 .footer{font-size:12px;color:#656565;text-align:center;margin:18px 0 6px}
 .badge{display:inline-flex;margin-top:10px;padding:6px 9px;border:1px solid rgba(255,122,0,.22);border-radius:999px;color:var(--orange2);font-size:11px;font-weight:800;background:rgba(255,122,0,.06)}
+
+.sensor-panel{margin:12px 0 0;padding:13px 14px;border:1px solid #202020;border-radius:15px;background:#0a0a0a}
+.sensor-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}
+.sensor-head b{font-size:12px}.sensor-head span{font-size:10px;color:#666}
+.sensor-bar{display:flex;flex-wrap:wrap;gap:7px}
+.sensor-chip{padding:6px 9px;border:1px solid #282828;border-radius:999px;background:#0d0d0d;color:#9a9a9a;font-size:10px;direction:ltr}
+.sensor-chip.rf{color:#9eeef6;border-color:rgba(34,211,238,.25);background:rgba(34,211,238,.055)}
+.sensor-chip.power{color:#ffe08a;border-color:rgba(251,191,36,.22);background:rgba(251,191,36,.05)}
+.sensor-chip.gps{color:#9ee8b8;border-color:rgba(52,211,153,.22);background:rgba(52,211,153,.05)}
+.sensor-chip.other{color:#bdbdbd}
+.stat .subline{margin-top:5px;color:#727272;font-size:10px;line-height:1.35;direction:ltr}
+.value.good{color:#34d399}.value.warn{color:#fbbf24}
+.toolbar .empty-note{color:#666;font-size:11px}
+
 @media(max-width:800px){.grid{grid-template-columns:1fr}.wrap{width:min(100% - 20px,720px)}canvas{height:360px}.upload{width:100%}}
 </style>
 </head>
@@ -69,8 +83,8 @@ canvas{width:100%;height:440px;display:block;border-radius:10px;background:#0909
   <div class="top">
     <div class="brand">
       <a class="back" href="../index.html">← العودة إلى BADER FPV TOOLS</a>
-      <h1>EdgeTX Telemetry Viewer</h1>
-      <div class="sub">عارض مجاني محلي لملفات TeleLog.csv الناتجة من tellog.lua</div>
+      <h1>ELRS Telemetry Analyzer</h1>
+      <div class="sub">تحليل محلي لملفات EdgeTX TeleLog.csv مع اكتشاف المستشعرات تلقائيًا وفحص Dynamic Power</div>
       <span class="badge">LOCAL • FREE • NO UPLOAD</span>
     </div>
     <div class="upload">
@@ -80,21 +94,23 @@ canvas{width:100%;height:440px;display:block;border-radius:10px;background:#0909
   </div>
 
   <div class="grid">
-    <div class="stat"><div class="label">GPS HEADING (°)</div><div class="value" id="headingVal">—</div></div>
+    <div class="stat">
+      <div class="label">DYNAMIC POWER</div>
+      <div class="value" id="dynVal">—</div>
+      <div class="subline" id="dynSeq">TPWR غير مقروء</div>
+    </div>
     <div class="stat"><div class="label">RX QUALITY (%)</div><div class="value" id="rqlyVal">—</div></div>
     <div class="stat"><div class="label">TX POWER (mW)</div><div class="value" id="tpwrVal">—</div></div>
   </div>
 
-  <div class="toolbar">
+  <div class="toolbar" id="toolbar">
     <b>الرسوم:</b>
-    <label><input type="checkbox" class="seriesToggle" data-key="GPS_ground_course" checked> GPS Heading</label>
-    <label><input type="checkbox" class="seriesToggle" data-key="RQly" checked> RQly</label>
-    <label><input type="checkbox" class="seriesToggle" data-key="TPWR" checked> TPWR</label>
-    <label><input type="checkbox" class="seriesToggle" data-key="TQly"> TQly</label>
-    <label><input type="checkbox" class="seriesToggle" data-key="RxBt"> RxBt</label>
-    <label><input type="checkbox" class="seriesToggle" data-key="Curr"> Current</label>
-    <label><input type="checkbox" class="seriesToggle" data-key="Capa"> Capacity</label>
-    <label><input type="checkbox" class="seriesToggle" data-key="GPS_numSat"> GPS Sats</label>
+    <span class="empty-note">ارفع الملف لعرض المستشعرات المتوفرة فقط.</span>
+  </div>
+
+  <div class="sensor-panel">
+    <div class="sensor-head"><b>Available Telemetry</b><span id="sensorCount">0 detected</span></div>
+    <div class="sensor-bar" id="sensorBar"><span class="empty-note">لم يتم تحميل ملف بعد.</span></div>
   </div>
 
   <div class="chart-card">
@@ -116,22 +132,33 @@ canvas{width:100%;height:440px;display:block;border-radius:10px;background:#0909
   const ctx=canvas.getContext('2d');
   const empty=document.getElementById('empty');
   const fileName=document.getElementById('fileName');
-  const headingVal=document.getElementById('headingVal');
+  const dynVal=document.getElementById('dynVal');
+  const dynSeq=document.getElementById('dynSeq');
   const rqlyVal=document.getElementById('rqlyVal');
   const tpwrVal=document.getElementById('tpwrVal');
   const resetBtn=document.getElementById('resetBtn');
-  const toggles=[...document.querySelectorAll('.seriesToggle')];
+  const toolbar=document.getElementById('toolbar');
+  const sensorBar=document.getElementById('sensorBar');
+  const sensorCount=document.getElementById('sensorCount');
 
   let rows=[],headers=[],hoverIndex=null;
   const seriesMeta={
-    GPS_ground_course:{label:'GPS Heading',color:'#4d8cff'},
-    RQly:{label:'RQly',color:'#ff545a'},
-    TPWR:{label:'TPWR',color:'#20c979'},
-    TQly:{label:'TQly',color:'#a879ff'},
-    RxBt:{label:'RxBt',color:'#f4a62a'},
-    Curr:{label:'Current',color:'#29c5c5'},
-    Capa:{label:'Capacity',color:'#9b9b9b'},
-    GPS_numSat:{label:'GPS Sats',color:'#d0d0d0'}
+    RQly:{label:'RQly',color:'#ff545a',group:'rf'},
+    TQly:{label:'TQly',color:'#a879ff',group:'rf'},
+    TPWR:{label:'TPWR',color:'#20c979',group:'rf'},
+    '1RSS':{label:'RSSI 1',color:'#4d8cff',group:'rf'},
+    '2RSS':{label:'RSSI 2',color:'#73a2ff',group:'rf'},
+    RSS1:{label:'RSSI 1',color:'#4d8cff',group:'rf'},
+    RSS2:{label:'RSSI 2',color:'#73a2ff',group:'rf'},
+    RSNR:{label:'SNR',color:'#30c9b0',group:'rf'},
+    RFMD:{label:'RF Mode',color:'#e879f9',group:'rf'},
+    RxBt:{label:'Rx Battery',color:'#f4a62a',group:'power'},
+    Curr:{label:'Current',color:'#29c5c5',group:'power'},
+    Capa:{label:'Capacity',color:'#9b9b9b',group:'power'},
+    GPS_ground_course:{label:'GPS Heading',color:'#4d8cff',group:'gps'},
+    Hdg:{label:'GPS Heading',color:'#4d8cff',group:'gps'},
+    GPS_numSat:{label:'GPS Sats',color:'#d0d0d0',group:'gps'},
+    GPS_speed:{label:'GPS Speed',color:'#34d399',group:'gps'}
   };
 
   function splitCSVLine(line){
@@ -161,8 +188,82 @@ canvas{width:100%;height:440px;display:block;border-radius:10px;background:#0909
     return Number.isFinite(n)?n:null;
   }
 
+  function numericValues(key){
+    return rows.map(function(r){return num(r[key])}).filter(function(v){return v!==null});
+  }
+
+  function gpsActive(){
+    const satsKey=headers.includes('GPS_numSat')?'GPS_numSat':(headers.includes('Sats')?'Sats':null);
+    if(satsKey&&numericValues(satsKey).some(function(v){return v>=0}))return true;
+
+    const latKeys=['GPS_coord[0]','GPS_lat','Lat','Latitude'];
+    const lonKeys=['GPS_coord[1]','GPS_lon','Lon','Longitude'];
+    const lat=latKeys.find(function(k){return headers.includes(k)});
+    const lon=lonKeys.find(function(k){return headers.includes(k)});
+    if(lat&&lon){
+      for(const r of rows){
+        const a=num(r[lat]),b=num(r[lon]);
+        if(a!==null&&b!==null&&Math.abs(a)<=90&&Math.abs(b)<=180&&(Math.abs(a)>1e-7||Math.abs(b)>1e-7))return true;
+      }
+    }
+
+    for(const key of ['GPS_ground_course','Hdg']){
+      if(headers.includes(key)&&numericValues(key).some(function(v){return v>=0&&v<=360}))return true;
+    }
+    if(headers.includes('GPS_speed')&&numericValues('GPS_speed').some(function(v){return v>=0}))return true;
+    return false;
+  }
+
+  function isGpsKey(key){
+    return /^GPS/i.test(key)||key==='Hdg'||key==='Sats'||key==='VSpd'||key==='GSpd';
+  }
+
+  function detectedKeys(){
+    const activeGps=gpsActive();
+    return headers.filter(function(key){
+      if(!key||/^(Date|Time|Timestamp|FM|Mode)$/i.test(key))return false;
+      if(isGpsKey(key)&&!activeGps)return false;
+      return rows.some(function(r){return String(r[key]??'').trim()!==''});
+    });
+  }
+
+  function graphKeys(){
+    const activeGps=gpsActive();
+    return Object.keys(seriesMeta).filter(function(key){
+      if(!headers.includes(key))return false;
+      if(seriesMeta[key].group==='gps'&&!activeGps)return false;
+      return numericValues(key).length>=2;
+    });
+  }
+
+  function renderAvailable(){
+    const keys=detectedKeys();
+    sensorCount.textContent=keys.length+' detected';
+    sensorBar.innerHTML=keys.length?keys.map(function(key){
+      let group='other';
+      if(seriesMeta[key])group=seriesMeta[key].group;
+      else if(isGpsKey(key))group='gps';
+      else if(/(RQly|TQly|RSS|SNR|RFMD|TPWR)/i.test(key))group='rf';
+      else if(/(RxBt|Volt|Curr|Capa|Batt|Cell)/i.test(key))group='power';
+      return '<span class="sensor-chip '+group+'">'+key+'</span>';
+    }).join(''):'<span class="empty-note">لا توجد حقول فعالة.</span>';
+  }
+
+  function renderToolbar(){
+    const keys=graphKeys();
+    toolbar.innerHTML='<b>الرسوم:</b>';
+    if(!keys.length){
+      toolbar.insertAdjacentHTML('beforeend','<span class="empty-note">لا توجد بيانات رئيسية قابلة للرسم.</span>');
+      return;
+    }
+    keys.forEach(function(key,index){
+      const checked=(key==='RQly'||key==='TPWR'||key==='TQly'||(index===0&&keys.length===1))?' checked':'';
+      toolbar.insertAdjacentHTML('beforeend','<label><input type="checkbox" class="seriesToggle" data-key="'+key+'"'+checked+'> '+seriesMeta[key].label+'</label>');
+    });
+  }
+
   function enabledKeys(){
-    return toggles.filter(function(t){return t.checked&&headers.includes(t.dataset.key)})
+    return [...document.querySelectorAll('.seriesToggle')].filter(function(t){return t.checked&&headers.includes(t.dataset.key)})
       .map(function(t){return t.dataset.key});
   }
 
@@ -174,12 +275,26 @@ canvas{width:100%;height:440px;display:block;border-radius:10px;background:#0909
     return null;
   }
 
+  function dynamicPowerInfo(){
+    const values=numericValues('TPWR');
+    const seq=[];
+    values.forEach(function(v){
+      const x=Math.round(v*100)/100;
+      if(!seq.length||seq[seq.length-1]!==x)seq.push(x);
+    });
+    if(!seq.length)return{state:'—',seq:'TPWR غير مسجل',cls:''};
+    if(seq.length===1)return{state:'لم يُرصد',seq:'ثابت عند '+seq[0]+' mW',cls:'warn'};
+    return{state:'اشتغل ✓',seq:seq.join(' → ')+' mW',cls:'good'};
+  }
+
   function setStats(idx){
     const i=idx===undefined?rows.length-1:idx;
-    const h=latestValid('GPS_ground_course',i),r=latestValid('RQly',i),p=latestValid('TPWR',i);
-    headingVal.textContent=h===null?'—':h.toFixed(1);
+    const r=latestValid('RQly',i),p=latestValid('TPWR',i),d=dynamicPowerInfo();
     rqlyVal.textContent=r===null?'—':r.toFixed(1);
     tpwrVal.textContent=p===null?'—':p.toFixed(1);
+    dynVal.textContent=d.state;
+    dynVal.className='value '+d.cls;
+    dynSeq.textContent=d.seq;
   }
 
   function resizeCanvas(){
@@ -250,7 +365,12 @@ canvas{width:100%;height:440px;display:block;border-radius:10px;background:#0909
 
   function reset(){
     rows=[];headers=[];hoverIndex=null;input.value='';canvas.hidden=true;empty.hidden=false;
-    fileName.textContent='اختر ملف TeleLog.csv';headingVal.textContent=rqlyVal.textContent=tpwrVal.textContent='—';
+    fileName.textContent='اختر ملف TeleLog.csv';
+    rqlyVal.textContent=tpwrVal.textContent=dynVal.textContent='—';
+    dynVal.className='value';dynSeq.textContent='TPWR غير مقروء';
+    toolbar.innerHTML='<b>الرسوم:</b><span class="empty-note">ارفع الملف لعرض المستشعرات المتوفرة فقط.</span>';
+    sensorCount.textContent='0 detected';
+    sensorBar.innerHTML='<span class="empty-note">لم يتم تحميل ملف بعد.</span>';
   }
 
   input.addEventListener('change',async function(){
@@ -259,11 +379,12 @@ canvas{width:100%;height:440px;display:block;border-radius:10px;background:#0909
       const text=await f.text();rows=parseCSV(text);
       if(!headers.includes('RQly')&&!headers.includes('TPWR'))throw new Error('هذا الملف لا يبدو TeleLog من tellog.lua');
       fileName.textContent=f.name+' — '+rows.length.toLocaleString('en-US')+' samples';
+      renderAvailable();renderToolbar();
       empty.hidden=true;canvas.hidden=false;hoverIndex=null;setStats();draw();
     }catch(e){reset();alert(e.message||'تعذر قراءة الملف')}
   });
 
-  toggles.forEach(function(t){t.addEventListener('change',draw)});
+  toolbar.addEventListener('change',function(e){if(e.target&&e.target.classList.contains('seriesToggle'))draw()});
   resetBtn.addEventListener('click',reset);
   window.addEventListener('resize',function(){if(rows.length)draw()});
 
