@@ -76,7 +76,7 @@ button:hover{border-color:rgba(168,121,255,.5)}
   color:#a49baa;font-size:10px;font-weight:800;direction:ltr
 }
 .graph-btn.active{border-color:var(--purple);color:#efe7ff;background:rgba(168,121,255,.10);box-shadow:0 0 18px rgba(168,121,255,.08)}
-canvas{display:block;width:100%;height:430px;border-radius:12px;background:#08070b}
+canvas{display:block;width:100%;height:430px;border-radius:12px;background:#08070b;cursor:grab;touch-action:none} canvas.dragging{cursor:grabbing}
 .chart-empty{padding:78px 20px;text-align:center;color:#776f80}
 .fields{display:flex;flex-wrap:wrap;gap:7px}
 .field{
@@ -138,9 +138,14 @@ canvas{display:block;width:100%;height:430px;border-radius:12px;background:#0807
       <button class="graph-btn active" data-group="compare">Setpoint + Gyro</button>
       <button class="graph-btn" data-group="dterm">D-term</button>
       <button class="graph-btn" data-group="error">Tracking Error</button>
+      <span style="width:8px"></span>
+      <button class="graph-btn" id="zoomOutBtn" type="button">− Zoom</button>
+      <button class="graph-btn" id="zoomInBtn" type="button">+ Zoom</button>
+      <button class="graph-btn" id="zoomResetBtn" type="button">Reset Zoom</button>
     </div>
     <div id="chartEmpty" class="chart-empty">ارفع Blackbox CSV لعرض الرسم</div>
     <canvas id="chart" hidden></canvas>
+    <div class="analysis-note" id="zoomHelp">Zoom: عجلة الماوس فوق الرسم • اسحب يمين/يسار للتحريك • Reset Zoom للرجوع لكامل الرحلة.</div>
   </section>
 
   <section class="panel">
@@ -156,6 +161,7 @@ canvas{display:block;width:100%;height:430px;border-radius:12px;background:#0807
   const $=s=>document.querySelector(s);
   const input=$('#fileInput'), resetBtn=$('#resetBtn'), canvas=$('#chart'), ctx=canvas.getContext('2d');
   let meta={},headers=[],rows=[],currentGroup='compare';
+  let viewStart=0,viewEnd=1,dragging=false,dragStartX=0,dragStartViewStart=0,dragStartViewEnd=1;
 
   const groups={
     motors:['motor[0]','motor[1]','motor[2]','motor[3]'],
@@ -348,13 +354,35 @@ canvas{display:block;width:100%;height:430px;border-radius:12px;background:#0807
     ctx.setTransform(dpr,0,0,dpr,0,0);
   }
 
+  function clamp01(v){return Math.max(0,Math.min(1,v))}
+  function viewSpan(){return Math.max(0.005,viewEnd-viewStart)}
+
+  function setView(start,end){
+    let span=end-start;
+    span=Math.max(0.005,Math.min(1,span));
+    start=Math.max(0,Math.min(1-span,start));
+    viewStart=start;
+    viewEnd=start+span;
+    if(rows.length)drawGroup(currentGroup);
+  }
+
+  function zoomAt(factor,anchorRatio=.5){
+    const span=viewSpan();
+    const newSpan=Math.max(0.005,Math.min(1,span*factor));
+    const anchor=viewStart+span*anchorRatio;
+    let start=anchor-newSpan*anchorRatio;
+    start=Math.max(0,Math.min(1-newSpan,start));
+    setView(start,start+newSpan);
+  }
+
   function drawGroup(name){
     currentGroup=name;
     document.querySelectorAll('.graph-btn').forEach(b=>b.classList.toggle('active',b.dataset.group===name));
     const keys=groupKeys(name);
     $('#chartTitle').textContent=({motors:'Motors',compare:'Setpoint + Gyro',gyro:'Gyro',setpoint:'Setpoint',dterm:'D-term',error:'Tracking Error'})[name]||name;
+    const zoomPct=Math.round(100/viewSpan());
     $('#chartStats').textContent=keys.length
-      ? (name==='compare' ? 'Solid = Setpoint · Dashed = Gyro · Roll / Pitch / Yaw' : keys.map(prettyLabel).join(' • '))
+      ? ((name==='compare' ? 'Solid = Setpoint · Dashed = Gyro · Roll / Pitch / Yaw' : keys.map(prettyLabel).join(' • ')) + (zoomPct>100 ? ` · ${zoomPct}% zoom` : ''))
       : 'No compatible fields';
     if(!keys.length){canvas.hidden=true;$('#chartEmpty').hidden=false;$('#chartEmpty').textContent='هذه المجموعة غير موجودة في الملف';return}
     $('#chartEmpty').hidden=true;canvas.hidden=false;
@@ -362,11 +390,18 @@ canvas{display:block;width:100%;height:430px;border-radius:12px;background:#0807
     const w=canvas.clientWidth,h=canvas.clientHeight,p={l:58,r:18,t:30,b:36},pw=w-p.l-p.r,ph=h-p.t-p.b;
     ctx.clearRect(0,0,w,h);
 
+    const total=Math.max(1,rows.length-1);
+    const startIdx=Math.max(0,Math.floor(viewStart*total));
+    const endIdx=Math.min(rows.length-1,Math.max(startIdx+1,Math.ceil(viewEnd*total)));
+
     let ymin=Infinity,ymax=-Infinity;
-    const all=[];
     keys.forEach(k=>{
-      const a=vals(k); all.push(a);
-      a.forEach(v=>{if(v<ymin)ymin=v;if(v>ymax)ymax=v});
+      for(let i=startIdx;i<=endIdx;i++){
+        const v=num(rows[i][k]);
+        if(v===null)continue;
+        if(v<ymin)ymin=v;
+        if(v>ymax)ymax=v;
+      }
     });
     if(!Number.isFinite(ymin)||!Number.isFinite(ymax)){ymin=0;ymax=1}
     if(ymin===ymax){ymin-=1;ymax+=1}
@@ -377,17 +412,29 @@ canvas{display:block;width:100%;height:430px;border-radius:12px;background:#0807
       const y=p.t+ph*j/5;ctx.beginPath();ctx.moveTo(p.l,y);ctx.lineTo(w-p.r,y);ctx.stroke();
       const v=ymax-(ymax-ymin)*j/5;ctx.fillText(fmt(v,1),p.l-7,y+4);
     }
+    const timeVals=vals('time');
+    const hasTime=timeVals.length===rows.length;
     for(let j=0;j<=5;j++){
       const x=p.l+pw*j/5;ctx.beginPath();ctx.moveTo(x,p.t);ctx.lineTo(x,h-p.b);ctx.stroke();
+      const idx=Math.round(startIdx+(endIdx-startIdx)*(j/5));
+      let label='';
+      if(hasTime){
+        const t0=timeVals[0],tv=timeVals[idx];
+        label=((tv-t0)/1e6).toFixed(2)+'s';
+      }else{
+        label=Math.round((idx/Math.max(1,rows.length-1))*100)+'%';
+      }
+      ctx.fillStyle='#777080';ctx.textAlign='center';ctx.fillText(label,x,h-12);
     }
 
-    const maxPts=1700,step=Math.max(1,Math.ceil(rows.length/maxPts));
+    const visibleCount=endIdx-startIdx+1;
+    const maxPts=1700,step=Math.max(1,Math.ceil(visibleCount/maxPts));
     keys.forEach((k,ki)=>{
       const style=seriesStyle(k,ki);
       ctx.strokeStyle=style.color;ctx.lineWidth=1.35;ctx.setLineDash(style.dash);ctx.beginPath();let started=false;
-      for(let i=0;i<rows.length;i+=step){
+      for(let i=startIdx;i<=endIdx;i+=step){
         const v=num(rows[i][k]);if(v===null)continue;
-        const x=p.l+(i/(rows.length-1))*pw,y=p.t+((ymax-v)/(ymax-ymin))*ph;
+        const x=p.l+((i-startIdx)/Math.max(1,endIdx-startIdx))*pw,y=p.t+((ymax-v)/(ymax-ymin))*ph;
         if(!started){ctx.moveTo(x,y);started=true}else ctx.lineTo(x,y);
       }
       ctx.stroke();ctx.setLineDash([]);
@@ -411,7 +458,7 @@ canvas{display:block;width:100%;height:430px;border-radius:12px;background:#0807
   }
 
   function reset(){
-    meta={};headers=[];rows=[];input.value='';
+    meta={};headers=[];rows=[];input.value='';viewStart=0;viewEnd=1;dragging=false;
     $('#durationVal').textContent=$('#rateVal').textContent=$('#fwVal').textContent=$('#craftVal').textContent='—';
     $('#durationSub').textContent='No file';$('#rateSub').textContent=$('#fwSub').textContent=$('#craftSub').textContent='—';
     $('#diagnostics').innerHTML='<div class="diag"><div class="dtitle">ارفع ملف Blackbox</div><p>سنفحص التوازن بين المحركات، التشبع، جودة البيانات، وتتبع الأوامر بشكل سريع.</p></div>';
@@ -426,11 +473,47 @@ canvas{display:block;width:100%;height:430px;border-radius:12px;background:#0807
     try{
       const p=parseBlackbox(await f.text());meta=p.meta;headers=p.headers;rows=p.rows;
       if(rows.length<10)throw new Error('الملف لا يحتوي عينات Blackbox كافية');
+      viewStart=0;viewEnd=1;
       renderAll(f.name);
     }catch(e){reset();alert(e.message||'تعذر قراءة Blackbox CSV')}
   });
   document.querySelectorAll('.graph-btn').forEach(b=>b.onclick=()=>drawGroup(b.dataset.group));
   resetBtn.onclick=reset;
+
+  $('#zoomInBtn').onclick=()=>{if(rows.length)zoomAt(0.5,.5)};
+  $('#zoomOutBtn').onclick=()=>{if(rows.length)zoomAt(2,.5)};
+  $('#zoomResetBtn').onclick=()=>{if(rows.length)setView(0,1)};
+
+  canvas.addEventListener('wheel',e=>{
+    if(!rows.length)return;
+    e.preventDefault();
+    const r=canvas.getBoundingClientRect();
+    const ratio=Math.max(0,Math.min(1,(e.clientX-r.left)/Math.max(1,r.width)));
+    zoomAt(e.deltaY<0?0.82:1.22,ratio);
+  },{passive:false});
+
+  canvas.addEventListener('pointerdown',e=>{
+    if(!rows.length||viewSpan()>=.999)return;
+    dragging=true;dragStartX=e.clientX;dragStartViewStart=viewStart;dragStartViewEnd=viewEnd;
+    canvas.classList.add('dragging');
+    canvas.setPointerCapture(e.pointerId);
+  });
+  canvas.addEventListener('pointermove',e=>{
+    if(!dragging)return;
+    const r=canvas.getBoundingClientRect(),span=dragStartViewEnd-dragStartViewStart;
+    const delta=(e.clientX-dragStartX)/Math.max(1,r.width)*span;
+    let start=dragStartViewStart-delta;
+    start=Math.max(0,Math.min(1-span,start));
+    viewStart=start;viewEnd=start+span;
+    drawGroup(currentGroup);
+  });
+  const endDrag=e=>{
+    dragging=false;canvas.classList.remove('dragging');
+    try{canvas.releasePointerCapture(e.pointerId)}catch(_){}
+  };
+  canvas.addEventListener('pointerup',endDrag);
+  canvas.addEventListener('pointercancel',endDrag);
+
   window.addEventListener('resize',()=>{if(rows.length)drawGroup(currentGroup)});
 })();
 </script>
