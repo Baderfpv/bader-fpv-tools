@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#05070b">
+<title>Rates Visualizer — BADER FPV TOOLS</title>
+<style>
+:root{
+  --bg:#05070b;--card:#0b0f16;--card2:#0e131c;--line:#232b38;
+  --text:#eef4ff;--muted:#7e8a9a;--blue:#4d8cff;--blue2:#78a8ff;
+  --cyan:#22d3ee;--purple:#a879ff;--amber:#fbbf24;--green:#34d399;
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{
+  margin:0;min-height:100vh;color:var(--text);
+  font-family:"Segoe UI",Tahoma,Arial,sans-serif;
+  background:
+    radial-gradient(circle at 50% -12%,rgba(77,140,255,.14),transparent 35%),
+    linear-gradient(180deg,#070b11 0%,#05070b 56%,#030406 100%);
+}
+.wrap{width:min(1180px,calc(100% - 28px));margin:0 auto;padding:27px 0 36px}
+.top{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap}
+.back{display:inline-flex;color:var(--blue2);text-decoration:none;font-size:12px;font-weight:850;margin-bottom:10px}
+h1{margin:0;color:var(--blue);font-size:clamp(28px,4vw,41px);letter-spacing:-.03em}
+.sub{margin-top:8px;color:var(--muted);font-size:13px;line-height:1.7}
+.badge{display:inline-flex;margin-top:10px;padding:6px 9px;border:1px solid rgba(77,140,255,.25);border-radius:999px;background:rgba(77,140,255,.06);color:var(--blue2);font-size:10px;font-weight:900;direction:ltr}
+.modebox{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:11px;border:1px solid var(--line);border-radius:15px;background:var(--card)}
+.modebox b{font-size:11px;color:#cfd9e8}
+.mode-btn{padding:8px 11px;border-radius:10px;border:1px solid #293241;background:#0a0e14;color:#8e9aaa;font-weight:850;font-size:10px;cursor:pointer}
+.mode-btn.active{border-color:var(--blue);color:#eef5ff;background:rgba(77,140,255,.12);box-shadow:0 0 20px rgba(77,140,255,.08)}
+.layout{display:grid;grid-template-columns:340px 1fr;gap:14px;margin-top:18px}
+.panel{border:1px solid var(--line);border-radius:17px;background:var(--card);padding:14px}
+.panel h2,.panel h3{margin:0;color:#dbe6f5;font-size:13px}
+.axes{display:flex;gap:7px;margin-top:12px}
+.axis-btn{flex:1;padding:8px;border:1px solid #283141;border-radius:10px;background:#090d13;color:#8b97a7;font-weight:850;cursor:pointer;font-size:10px}
+.axis-btn.active{border-color:var(--blue);color:#fff;background:rgba(77,140,255,.12)}
+.control{margin-top:15px;padding-top:14px;border-top:1px solid #1d2531}
+.control:first-of-type{border-top:none;padding-top:4px}
+.control-head{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.control-head label{font-size:10px;color:#b8c3d1;font-weight:850}
+.valuebox{display:flex;align-items:center;gap:6px;direction:ltr}
+.valuebox input[type=number]{
+  width:88px;background:#070b10;color:#f4f7fb;border:1px solid #293241;border-radius:9px;
+  padding:7px 8px;font-size:11px;font-weight:800
+}
+.unit{font-size:9px;color:#6e7b8d}
+input[type=range]{width:100%;margin-top:10px;accent-color:var(--blue)}
+.hint{margin-top:6px;font-size:9px;color:#667386;line-height:1.55}
+.preset-row{display:flex;gap:7px;flex-wrap:wrap;margin-top:13px}
+.preset{padding:7px 9px;border:1px solid #283141;border-radius:999px;background:#090d13;color:#8390a0;font-size:9px;font-weight:800;cursor:pointer}
+.preset:hover{border-color:rgba(77,140,255,.5);color:#d9e8ff}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-bottom:12px}
+.stat{padding:12px;border:1px solid #242d3b;border-radius:13px;background:#080c12}
+.stat .label{font-size:9px;color:#738094;font-weight:900;direction:ltr;text-align:left}
+.stat .value{margin-top:6px;font-size:22px;font-weight:950;direction:ltr;text-align:left}
+.stat:nth-child(1) .value{color:var(--cyan)}
+.stat:nth-child(2) .value{color:var(--blue2)}
+.stat:nth-child(3) .value{color:var(--purple)}
+.stat:nth-child(4) .value{color:var(--amber)}
+.chart-card{border:1px solid #242d3b;border-radius:15px;background:#080c12;padding:12px}
+.chart-head{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.chart-head strong{font-size:12px;color:#dfe8f5}
+.chart-head span{font-size:9px;color:#6d798a;direction:ltr}
+canvas{display:block;width:100%;height:430px;border-radius:11px;background:#06090e}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:9px;color:#8c98a8;font-size:9px;direction:ltr}
+.legend span{display:flex;align-items:center;gap:6px}
+.dot{width:10px;height:3px;border-radius:2px;background:var(--blue)}
+.dot.roll{background:var(--cyan)} .dot.pitch{background:var(--purple)} .dot.yaw{background:var(--amber)}
+.cli{margin-top:14px;border:1px solid #242d3b;border-radius:15px;background:#070a0f;overflow:hidden}
+.cli-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #1d2530}
+.cli-head b{font-size:10px;color:#d9e3f0}
+.copy{padding:6px 9px;border:1px solid #2b3545;border-radius:8px;background:#0c1118;color:#94a2b4;font-size:9px;cursor:pointer}
+pre{margin:0;padding:12px;overflow:auto;color:#b8c6d8;font:10px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;direction:ltr;text-align:left}
+.note{margin-top:10px;color:#627082;font-size:9px;line-height:1.65}
+.footer{text-align:center;color:#536071;font-size:10px;margin-top:17px}
+@media(max-width:860px){.layout{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}canvas{height:370px}}
+@media(max-width:480px){.wrap{width:min(100% - 18px,460px)}.stats{grid-template-columns:1fr 1fr}.modebox{width:100%}canvas{height:320px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <a class="back" href="../index.html">← BADER FPV TOOLS</a>
+      <h1>Rates Visualizer</h1>
+      <div class="sub">شوف شكل الـRates قبل ما تطير — مع منحنى مباشر لكل محور وCLI جاهز.</div>
+      <span class="badge">BETAFLIGHT MATH • LIVE CURVE • LOCAL</span>
+    </div>
+    <div class="modebox">
+      <b>Rates Type</b>
+      <button class="mode-btn active" data-mode="ACTUAL">ACTUAL</button>
+      <button class="mode-btn" data-mode="BETAFLIGHT">BETAFLIGHT</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <section class="panel">
+      <h2>الإعدادات</h2>
+      <div class="axes">
+        <button class="axis-btn active" data-axis="roll">ROLL</button>
+        <button class="axis-btn" data-axis="pitch">PITCH</button>
+        <button class="axis-btn" data-axis="yaw">YAW</button>
+      </div>
+
+      <div class="control">
+        <div class="control-head">
+          <label id="p1Label">Center Sensitivity</label>
+          <div class="valuebox"><input id="p1Num" type="number"><span class="unit" id="p1Unit">deg/s</span></div>
+        </div>
+        <input id="p1Range" type="range">
+        <div class="hint" id="p1Hint">حساسية الستيك حول المنتصف.</div>
+      </div>
+
+      <div class="control">
+        <div class="control-head">
+          <label id="p2Label">Max Rate</label>
+          <div class="valuebox"><input id="p2Num" type="number"><span class="unit" id="p2Unit">deg/s</span></div>
+        </div>
+        <input id="p2Range" type="range">
+        <div class="hint" id="p2Hint">أقصى سرعة دوران عند Full Stick.</div>
+      </div>
+
+      <div class="control">
+        <div class="control-head">
+          <label>Expo</label>
+          <div class="valuebox"><input id="expoNum" type="number" min="0" max="1" step="0.01"><span class="unit">0–1</span></div>
+        </div>
+        <input id="expoRange" type="range" min="0" max="1" step="0.01">
+        <div class="hint">يغيّر شكل الانتقال من المنتصف إلى الأطراف.</div>
+      </div>
+
+      <div class="preset-row" id="presets">
+        <button class="preset" data-preset="default">Betaflight Default</button>
+        <button class="preset" data-preset="race">Race</button>
+        <button class="preset" data-preset="freestyle">Freestyle</button>
+        <button class="preset" data-preset="cinematic">Cinematic</button>
+      </div>
+
+      <div class="note" id="modeNote">
+        ACTUAL يفصل Center Sensitivity عن Max Rate؛ تغيير Expo لا يغيّر قيمة المنتصف أو الحد الأقصى.
+      </div>
+    </section>
+
+    <section>
+      <div class="stats">
+        <div class="stat"><div class="label">FULL STICK</div><div class="value" id="fullVal">—</div></div>
+        <div class="stat"><div class="label">50% STICK</div><div class="value" id="halfVal">—</div></div>
+        <div class="stat"><div class="label">25% STICK</div><div class="value" id="quarterVal">—</div></div>
+        <div class="stat"><div class="label">CENTER SLOPE</div><div class="value" id="centerVal">—</div></div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-head">
+          <strong>Stick Position → Angular Rate</strong>
+          <span id="chartInfo">Roll / Pitch / Yaw</span>
+        </div>
+        <canvas id="chart"></canvas>
+        <div class="legend">
+          <span><i class="dot roll"></i>Roll</span>
+          <span><i class="dot pitch"></i>Pitch</span>
+          <span><i class="dot yaw"></i>Yaw</span>
+        </div>
+      </div>
+
+      <div class="cli">
+        <div class="cli-head"><b>Betaflight CLI</b><button id="copyBtn" class="copy">Copy</button></div>
+        <pre id="cliText"></pre>
+      </div>
+    </section>
+  </div>
+
+  <div class="footer">BADER FPV TOOLS — Rates Visualizer</div>
+</div>
+
+<script>
+(function(){
+  const $=s=>document.querySelector(s);
+  const canvas=$('#chart'),ctx=canvas.getContext('2d');
+  let mode='ACTUAL',axis='roll';
+
+  const state={
+    ACTUAL:{
+      roll:{p1:70,p2:670,expo:0},
+      pitch:{p1:70,p2:670,expo:0},
+      yaw:{p1:70,p2:670,expo:0}
+    },
+    BETAFLIGHT:{
+      roll:{p1:1.00,p2:0.70,expo:0.00},
+      pitch:{p1:1.00,p2:0.70,expo:0.00},
+      yaw:{p1:1.00,p2:0.70,expo:0.00}
+    }
+  };
+
+  const presets={
+    ACTUAL:{
+      default:{p1:70,p2:670,expo:0},
+      race:{p1:200,p2:620,expo:0},
+      freestyle:{p1:120,p2:850,expo:0.30},
+      cinematic:{p1:50,p2:500,expo:0.45}
+    },
+    BETAFLIGHT:{
+      default:{p1:1.00,p2:0.70,expo:0},
+      race:{p1:1.15,p2:0.65,expo:0},
+      freestyle:{p1:1.00,p2:0.75,expo:0.15},
+      cinematic:{p1:0.70,p2:0.60,expo:0.25}
+    }
+  };
+
+  function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+  function actualRate(x,s){
+    const a=Math.abs(x),e=s.expo;
+    const expof=a*((Math.pow(x,5)*e)+(x*(1-e)));
+    return x*s.p1 + Math.max(0,s.p2-s.p1)*expof;
+  }
+  function betaflightRate(x,s){
+    const a=Math.abs(x),e=s.expo;
+    let c=x;
+    if(e>0)c=c*Math.pow(a,3)*e+c*(1-e);
+    let rc=s.p1;
+    if(rc>2)rc+=14.54*(rc-2);
+    let rate=200*rc*c;
+    if(s.p2>0){
+      const sf=1/clamp(1-(a*s.p2),0.01,1);
+      rate*=sf;
+    }
+    return rate;
+  }
+  function rateAt(x,s){return mode==='ACTUAL'?actualRate(x,s):betaflightRate(x,s)}
+  function current(){return state[mode][axis]}
+
+  function setupControls(){
+    const s=current();
+    if(mode==='ACTUAL'){
+      $('#p1Label').textContent='Center Sensitivity';
+      $('#p1Unit').textContent='deg/s';
+      $('#p1Range').min=10;$('#p1Range').max=500;$('#p1Range').step=10;
+      $('#p1Num').min=10;$('#p1Num').max=500;$('#p1Num').step=10;
+      $('#p2Label').textContent='Max Rate';
+      $('#p2Unit').textContent='deg/s';
+      $('#p2Range').min=200;$('#p2Range').max=1998;$('#p2Range').step=10;
+      $('#p2Num').min=200;$('#p2Num').max=1998;$('#p2Num').step=10;
+      $('#p1Hint').textContent='الحساسية حول Center Stick بوحدة deg/s.';
+      $('#p2Hint').textContent='السرعة القصوى عند Full Stick.';
+      $('#modeNote').textContent='ACTUAL يفصل Center Sensitivity عن Max Rate؛ تغيير Expo لا يغيّر قيمة المنتصف أو الحد الأقصى.';
+    }else{
+      $('#p1Label').textContent='RC Rate';
+      $('#p1Unit').textContent='x';
+      $('#p1Range').min=.1;$('#p1Range').max=2.5;$('#p1Range').step=.01;
+      $('#p1Num').min=.1;$('#p1Num').max=2.5;$('#p1Num').step=.01;
+      $('#p2Label').textContent='Super Rate';
+      $('#p2Unit').textContent='0–1';
+      $('#p2Range').min=0;$('#p2Range').max=.99;$('#p2Range').step=.01;
+      $('#p2Num').min=0;$('#p2Num').max=.99;$('#p2Num').step=.01;
+      $('#p1Hint').textContent='RC Rate يحدد الميل الأساسي ويؤثر على Max Rate.';
+      $('#p2Hint').textContent='Super Rate يزيد السرعة أكثر قرب Full Stick.';
+      $('#modeNote').textContent='BETAFLIGHT legacy: RC Rate وSuper Rate وExpo يتفاعلون مع بعض؛ Max Rate ليست قيمة مستقلة.';
+    }
+    $('#p1Range').value=$('#p1Num').value=s.p1;
+    $('#p2Range').value=$('#p2Num').value=s.p2;
+    $('#expoRange').value=$('#expoNum').value=s.expo;
+  }
+
+  function resize(){
+    const dpr=Math.max(1,window.devicePixelRatio||1),r=canvas.getBoundingClientRect();
+    canvas.width=Math.round(r.width*dpr);canvas.height=Math.round(r.height*dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+
+  function draw(){
+    resize();
+    const w=canvas.clientWidth,h=canvas.clientHeight,p={l:58,r:18,t:24,b:38},pw=w-p.l-p.r,ph=h-p.t-p.b;
+    ctx.clearRect(0,0,w,h);
+
+    const axes=['roll','pitch','yaw'],cols=['#22d3ee','#a879ff','#fbbf24'];
+    let ymax=0;
+    axes.forEach(a=>{
+      for(let i=0;i<=100;i++)ymax=Math.max(ymax,Math.abs(rateAt(i/100,state[mode][a])));
+    });
+    ymax=Math.max(200,Math.ceil(ymax/100)*100);
+
+    ctx.font='10px Segoe UI';ctx.strokeStyle='#1f2733';ctx.fillStyle='#6f7b8b';ctx.lineWidth=1;
+    for(let j=0;j<=5;j++){
+      const y=p.t+ph*j/5;ctx.beginPath();ctx.moveTo(p.l,y);ctx.lineTo(w-p.r,y);ctx.stroke();
+      const v=ymax-(2*ymax)*(j/5);ctx.textAlign='right';ctx.fillText(Math.round(v),p.l-7,y+4);
+    }
+    for(let j=0;j<=4;j++){
+      const x=p.l+pw*j/4;ctx.beginPath();ctx.moveTo(x,p.t);ctx.lineTo(x,h-p.b);ctx.stroke();
+      const stick=-100+j*50;ctx.textAlign='center';ctx.fillText(stick+'%',x,h-15);
+    }
+
+    axes.forEach((a,ai)=>{
+      ctx.strokeStyle=cols[ai];ctx.lineWidth=a===axis?2.2:1.35;ctx.globalAlpha=a===axis?1:.52;ctx.beginPath();
+      for(let i=0;i<=240;i++){
+        const x=-1+2*i/240,yv=rateAt(x,state[mode][a]);
+        const px=p.l+((x+1)/2)*pw,py=p.t+((ymax-yv)/(2*ymax))*ph;
+        if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
+      }
+      ctx.stroke();ctx.globalAlpha=1;
+    });
+  }
+
+  function centerSlope(s){
+    const e=.0001;
+    return (rateAt(e,s)-rateAt(-e,s))/(2*e);
+  }
+
+  function renderStats(){
+    const s=current();
+    $('#fullVal').textContent=Math.round(Math.abs(rateAt(1,s)))+'°/s';
+    $('#halfVal').textContent=Math.round(Math.abs(rateAt(.5,s)))+'°/s';
+    $('#quarterVal').textContent=Math.round(Math.abs(rateAt(.25,s)))+'°/s';
+    $('#centerVal').textContent=Math.round(centerSlope(s))+'°/s';
+    $('#chartInfo').textContent=mode+' · '+axis.toUpperCase()+' selected';
+  }
+
+  function cli(){
+    const axes=['roll','pitch','yaw'];
+    const lines=['set rates_type = '+mode];
+    axes.forEach(a=>{
+      const s=state[mode][a];
+      if(mode==='ACTUAL'){
+        lines.push(`set ${a}_rc_rate = ${Math.round(s.p1/10)}`);
+        lines.push(`set ${a}_srate = ${Math.round(s.p2/10)}`);
+        lines.push(`set ${a}_expo = ${Math.round(s.expo*100)}`);
+      }else{
+        lines.push(`set ${a}_rc_rate = ${Math.round(s.p1*100)}`);
+        lines.push(`set ${a}_srate = ${Math.round(s.p2*100)}`);
+        lines.push(`set ${a}_expo = ${Math.round(s.expo*100)}`);
+      }
+    });
+    lines.push('save');
+    $('#cliText').textContent=lines.join('\n');
+  }
+
+  function render(){setupControls();renderStats();draw();cli()}
+
+  function setValue(key,val){
+    const s=current();
+    if(key==='p1')s.p1=Number(val);
+    if(key==='p2')s.p2=Number(val);
+    if(key==='expo')s.expo=Number(val);
+    renderStats();draw();cli();
+  }
+
+  [['p1Range','p1Num','p1'],['p2Range','p2Num','p2'],['expoRange','expoNum','expo']].forEach(([r,n,k])=>{
+    $('#'+r).addEventListener('input',e=>{$('#'+n).value=e.target.value;setValue(k,e.target.value)});
+    $('#'+n).addEventListener('input',e=>{$('#'+r).value=e.target.value;setValue(k,e.target.value)});
+  });
+
+  document.querySelectorAll('.axis-btn').forEach(b=>b.onclick=()=>{
+    axis=b.dataset.axis;
+    document.querySelectorAll('.axis-btn').forEach(x=>x.classList.toggle('active',x===b));
+    render();
+  });
+
+  document.querySelectorAll('.mode-btn').forEach(b=>b.onclick=()=>{
+    mode=b.dataset.mode;
+    document.querySelectorAll('.mode-btn').forEach(x=>x.classList.toggle('active',x===b));
+    render();
+  });
+
+  document.querySelectorAll('.preset').forEach(b=>b.onclick=()=>{
+    const p=presets[mode][b.dataset.preset];
+    state[mode][axis]={...p};
+    render();
+  });
+
+  $('#copyBtn').onclick=async()=>{
+    try{
+      await navigator.clipboard.writeText($('#cliText').textContent);
+      $('#copyBtn').textContent='Copied ✓';
+      setTimeout(()=>$('#copyBtn').textContent='Copy',1100);
+    }catch(e){
+      $('#copyBtn').textContent='Select text';
+    }
+  };
+
+  window.addEventListener('resize',draw);
+  render();
+})();
+</script>
+</body>
+</html>
