@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#07060a">
+<title>Blackbox Quick Analyzer — BADER FPV TOOLS</title>
+<style>
+:root{
+  --bg:#07060a;--card:#0d0b12;--card2:#110e18;--line:#292331;
+  --text:#eeeaf4;--muted:#8f8798;--purple:#a879ff;--purple2:#c8a7ff;
+  --cyan:#22d3ee;--green:#34d399;--amber:#fbbf24;--red:#fb7185;--orange:#ff8a3d;
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{
+  margin:0;min-height:100vh;color:var(--text);
+  font-family:"Segoe UI",Tahoma,Arial,sans-serif;
+  background:
+    radial-gradient(circle at 50% -12%,rgba(168,121,255,.14),transparent 35%),
+    linear-gradient(180deg,#09070d 0%,#07060a 55%,#040306 100%);
+}
+.wrap{width:min(1240px,calc(100% - 28px));margin:0 auto;padding:26px 0 36px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap}
+.brand{min-width:0}
+.back{display:inline-flex;color:var(--purple2);text-decoration:none;font-size:12px;font-weight:800;margin-bottom:10px}
+h1{margin:0;color:var(--purple);font-size:clamp(27px,4vw,39px);letter-spacing:-.025em}
+.sub{margin-top:8px;color:var(--muted);font-size:13px;line-height:1.7}
+.badge{display:inline-flex;margin-top:10px;padding:6px 9px;border:1px solid rgba(168,121,255,.25);border-radius:999px;color:var(--purple2);font-size:10px;font-weight:900;background:rgba(168,121,255,.06);direction:ltr}
+.upload{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:13px;border:1px solid var(--line);border-radius:16px;background:var(--card)
+}
+.filepick{display:flex;flex-direction:column;gap:5px;min-width:260px}
+.filepick strong{font-size:11px;color:#eee}
+.filepick small{font-size:9px;color:#746d7d}
+input[type=file]{max-width:310px;color:#aaa;font-size:10px}
+input[type=file]::file-selector-button{
+  border:1px solid rgba(168,121,255,.35);background:rgba(168,121,255,.10);
+  color:var(--purple2);padding:8px 10px;border-radius:9px;margin-left:9px;cursor:pointer;font-weight:850
+}
+button{
+  font-family:inherit;border:1px solid var(--line);background:#121017;color:#ddd;
+  padding:9px 12px;border-radius:10px;cursor:pointer
+}
+button:hover{border-color:rgba(168,121,255,.5)}
+.summary{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;margin-top:18px
+}
+.stat{padding:16px;border:1px solid var(--line);border-radius:16px;background:var(--card)}
+.stat .label{font-size:10px;color:var(--muted);font-weight:900;letter-spacing:.05em;direction:ltr;text-align:left}
+.stat .value{font-size:27px;font-weight:950;margin-top:7px;direction:ltr;text-align:left}
+.stat .small{font-size:9px;color:#746d7d;margin-top:5px;direction:ltr;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.panel{margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:17px;background:var(--card)}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.panel-head h2,.panel-head h3{margin:0;font-size:13px;color:#ddd}
+.panel-head span{font-size:10px;color:#746d7d;direction:ltr}
+.diagnostics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.diag{padding:13px;border:1px solid #26212e;border-radius:14px;background:#0a090e}
+.diag.good{border-color:rgba(52,211,153,.22)}
+.diag.warn{border-color:rgba(251,191,36,.24)}
+.diag.bad{border-color:rgba(251,113,133,.24)}
+.diag .dtitle{font-size:11px;font-weight:900;margin-bottom:6px}
+.diag.good .dtitle{color:var(--green)} .diag.warn .dtitle{color:var(--amber)} .diag.bad .dtitle{color:var(--red)}
+.diag p{margin:0;color:#9991a2;font-size:10px;line-height:1.65}
+.motor-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.motor-card{padding:12px;border:1px solid #26212e;border-radius:13px;background:#0a090e}
+.motor-card b{display:flex;justify-content:space-between;gap:8px;font-size:10px;direction:ltr}
+.motor-bar{height:7px;border-radius:999px;background:#16121d;margin-top:8px;overflow:hidden}
+.motor-fill{height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--purple),var(--cyan));width:0}
+.motor-meta{display:flex;justify-content:space-between;margin-top:7px;color:#7d7587;font-size:9px;direction:ltr}
+.graph-tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.graph-btn{
+  padding:7px 10px;border:1px solid #2b2434;border-radius:999px;background:#0c0a11;
+  color:#a49baa;font-size:10px;font-weight:800;direction:ltr
+}
+.graph-btn.active{border-color:var(--purple);color:#efe7ff;background:rgba(168,121,255,.10);box-shadow:0 0 18px rgba(168,121,255,.08)}
+canvas{display:block;width:100%;height:430px;border-radius:12px;background:#08070b}
+.chart-empty{padding:78px 20px;text-align:center;color:#776f80}
+.fields{display:flex;flex-wrap:wrap;gap:7px}
+.field{
+  border:1px solid #292330;border-radius:999px;background:#0b0910;color:#8e8597;
+  padding:6px 8px;font-size:9px;direction:ltr
+}
+.field.hot{color:#d6c2ff;border-color:rgba(168,121,255,.26)}
+.analysis-note{margin-top:9px;color:#756d7f;font-size:9px;line-height:1.6}
+.footer{text-align:center;color:#5f5867;font-size:10px;margin-top:18px}
+@media(max-width:900px){.summary{grid-template-columns:repeat(2,1fr)}.diagnostics{grid-template-columns:1fr}.motor-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.wrap{width:min(100% - 18px,480px)}.summary{grid-template-columns:1fr 1fr}.motor-grid{grid-template-columns:1fr 1fr}canvas{height:330px}.upload{width:100%}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="brand">
+      <a class="back" href="../index.html">← BADER FPV TOOLS</a>
+      <h1>Blackbox Quick Analyzer</h1>
+      <div class="sub">قراءة سريعة لملف Betaflight Blackbox CSV — البيانات تُحلل داخل المتصفح فقط.</div>
+      <span class="badge">LOCAL • BLACKBOX CSV • NO UPLOAD</span>
+    </div>
+    <div class="upload">
+      <label class="filepick">
+        <strong>Blackbox CSV</strong>
+        <small>ملف CSV صادر من Blackbox Explorer / CSV export</small>
+        <input id="fileInput" type="file" accept=".csv,text/csv">
+      </label>
+      <button id="resetBtn" type="button">إعادة ضبط</button>
+    </div>
+  </div>
+
+  <div class="summary">
+    <div class="stat"><div class="label">DURATION</div><div class="value" id="durationVal">—</div><div class="small" id="durationSub">No file</div></div>
+    <div class="stat"><div class="label">SAMPLE RATE</div><div class="value" id="rateVal">—</div><div class="small" id="rateSub">—</div></div>
+    <div class="stat"><div class="label">FIRMWARE</div><div class="value" id="fwVal">—</div><div class="small" id="fwSub">—</div></div>
+    <div class="stat"><div class="label">CRAFT</div><div class="value" id="craftVal">—</div><div class="small" id="craftSub">—</div></div>
+  </div>
+
+  <section class="panel">
+    <div class="panel-head"><h2>Quick Diagnosis</h2><span id="diagCount">Waiting for file</span></div>
+    <div class="diagnostics" id="diagnostics">
+      <div class="diag"><div class="dtitle">ارفع ملف Blackbox</div><p>سنفحص التوازن بين المحركات، التشبع، جودة البيانات، وتتبع الأوامر بشكل سريع.</p></div>
+    </div>
+    <div class="analysis-note">النتائج هنا مؤشرات سريعة وليست حكمًا نهائيًا على العطل؛ اتجاه الدوران، توزيع الوزن، المناورات والرياح قد تغيّر حمل كل Motor.</div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><h3>Motor Load</h3><span id="motorSpread">—</span></div>
+    <div class="motor-grid" id="motorGrid">
+      <div class="chart-empty" style="grid-column:1/-1;padding:30px">بانتظار الملف</div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><h3 id="chartTitle">Flight Graph</h3><span id="chartStats">اختر مجموعة</span></div>
+    <div class="graph-tools" id="graphTools">
+      <button class="graph-btn" data-group="motors">Motors</button>
+      <button class="graph-btn active" data-group="compare">Setpoint + Gyro</button>
+      <button class="graph-btn" data-group="dterm">D-term</button>
+      <button class="graph-btn" data-group="error">Tracking Error</button>
+    </div>
+    <div id="chartEmpty" class="chart-empty">ارفع Blackbox CSV لعرض الرسم</div>
+    <canvas id="chart" hidden></canvas>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><h3>Detected Blackbox Fields</h3><span id="fieldCount">0 fields</span></div>
+    <div class="fields" id="fields"><span class="field">No data</span></div>
+  </section>
+
+  <div class="footer">BADER FPV TOOLS — Blackbox Quick Analyzer</div>
+</div>
+
+<script>
+(function(){
+  const $=s=>document.querySelector(s);
+  const input=$('#fileInput'), resetBtn=$('#resetBtn'), canvas=$('#chart'), ctx=canvas.getContext('2d');
+  let meta={},headers=[],rows=[],currentGroup='compare';
+
+  const groups={
+    motors:['motor[0]','motor[1]','motor[2]','motor[3]'],
+    compare:['setpoint[0]','gyroADC[0]','setpoint[1]','gyroADC[1]','setpoint[2]','gyroADC[2]'],
+    gyro:['gyroADC[0]','gyroADC[1]','gyroADC[2]'],
+    setpoint:['setpoint[0]','setpoint[1]','setpoint[2]'],
+    dterm:['axisD[0]','axisD[1]'],
+    error:['axisError[0]','axisError[1]','axisError[2]']
+  };
+  const colors=['#a879ff','#22d3ee','#34d399','#fbbf24','#fb7185','#ff8a3d'];
+
+  function prettyLabel(key){
+    const labels={
+      'setpoint[0]':'Roll Setpoint','gyroADC[0]':'Roll Gyro',
+      'setpoint[1]':'Pitch Setpoint','gyroADC[1]':'Pitch Gyro',
+      'setpoint[2]':'Yaw Setpoint','gyroADC[2]':'Yaw Gyro',
+      'motor[0]':'Motor 1','motor[1]':'Motor 2','motor[2]':'Motor 3','motor[3]':'Motor 4',
+      'axisD[0]':'D-term Roll','axisD[1]':'D-term Pitch',
+      'axisError[0]':'Roll Error','axisError[1]':'Pitch Error','axisError[2]':'Yaw Error'
+    };
+    return labels[key]||key;
+  }
+
+  function seriesStyle(key,index){
+    if(currentGroup==='compare'){
+      const axis=Math.floor(index/2);
+      const axisColors=['#22d3ee','#a879ff','#fbbf24'];
+      const isGyro=/^gyroADC/.test(key);
+      return {color:axisColors[axis%axisColors.length],dash:isGyro?[6,4]:[]};
+    }
+    return {color:colors[index%colors.length],dash:[]};
+  }
+
+  function splitCSVLine(line){
+    const out=[];let cur='',q=false;
+    for(let i=0;i<line.length;i++){
+      const c=line[i];
+      if(c==='"'){
+        if(q&&line[i+1]==='"'){cur+='"';i++} else q=!q;
+      }else if(c===','&&!q){out.push(cur);cur=''}else cur+=c;
+    }
+    out.push(cur);return out;
+  }
+  function clean(v){return String(v??'').replace(/^"|"$/g,'').trim()}
+  function num(v){const n=Number(String(v??'').trim());return Number.isFinite(n)?n:null}
+
+  function parseBlackbox(text){
+    const lines=text.replace(/\r/g,'').split('\n').filter(x=>x.trim().length);
+    const hi=lines.findIndex(line=>line.includes('"loopIteration"')&&line.includes('"time"'));
+    if(hi<0)throw new Error('لم أجد Blackbox data header (loopIteration,time)');
+    const m={};
+    for(let i=0;i<hi;i++){
+      const a=splitCSVLine(lines[i]);
+      if(a.length>=2)m[clean(a[0])]=clean(a.slice(1).join(','));
+    }
+    const hs=splitCSVLine(lines[hi]).map(clean);
+    const rs=[];
+    for(let i=hi+1;i<lines.length;i++){
+      const a=splitCSVLine(lines[i]);
+      if(a.length<2)continue;
+      const o={};
+      hs.forEach((h,j)=>o[h]=a[j]??'');
+      rs.push(o);
+    }
+    return {meta:m,headers:hs,rows:rs};
+  }
+
+  function vals(key,mask=null){
+    if(!headers.includes(key))return [];
+    const out=[];
+    rows.forEach((r,i)=>{
+      if(mask&& !mask[i])return;
+      const n=num(r[key]); if(n!==null)out.push(n);
+    });
+    return out;
+  }
+  function avg(a){return a.length?a.reduce((x,y)=>x+y,0)/a.length:NaN}
+  function min(a){return a.length?Math.min(...a):NaN}
+  function max(a){return a.length?Math.max(...a):NaN}
+  function rms(a){return a.length?Math.sqrt(a.reduce((s,v)=>s+v*v,0)/a.length):NaN}
+  function fmt(v,d=1){return Number.isFinite(v)?Number(v).toFixed(d):'—'}
+
+  function durationSec(){
+    const a=vals('time');
+    return a.length>1?(a[a.length-1]-a[0])/1e6:NaN;
+  }
+  function sampleRate(){
+    const t=vals('time');
+    if(t.length<3)return NaN;
+    const ds=[];
+    for(let i=1;i<t.length;i++){const d=(t[i]-t[i-1])/1e6;if(d>0)ds.push(d)}
+    ds.sort((a,b)=>a-b);
+    const med=ds[Math.floor(ds.length/2)];
+    return med>0?1/med:NaN;
+  }
+  function motorKeys(){return ['motor[0]','motor[1]','motor[2]','motor[3]'].filter(k=>headers.includes(k))}
+  function motorMinOutput(){const s=String(meta.motorOutput||'');const m=s.match(/(-?\d+)\s*,\s*(-?\d+)/);return m?Number(m[1]):158}
+  function motorMaxOutput(){const s=String(meta.motorOutput||'');const m=s.match(/(-?\d+)\s*,\s*(-?\d+)/);return m?Number(m[2]):2047}
+
+  function activeMask(){
+    const mk=motorKeys(),lo=motorMinOutput();
+    if(!mk.length)return rows.map(()=>true);
+    return rows.map(r=>{
+      const a=mk.map(k=>num(r[k])).filter(Number.isFinite);
+      return a.length&&avg(a)>lo+90;
+    });
+  }
+
+  function renderSummary(fileName){
+    const d=durationSec(),sr=sampleRate();
+    $('#durationVal').textContent=Number.isFinite(d)?fmt(d,2)+' s':'—';
+    $('#durationSub').textContent=rows.length.toLocaleString('en-US')+' samples';
+    $('#rateVal').textContent=Number.isFinite(sr)?Math.round(sr)+' Hz':'—';
+    $('#rateSub').textContent=meta.looptime?('looptime '+meta.looptime+' µs'):'Median sample interval';
+    $('#fwVal').textContent=meta.firmwareVersion||meta.firmware||'—';
+    $('#fwSub').textContent=meta['Firmware revision']||'Betaflight';
+    $('#craftVal').textContent=meta['Craft name']||'—';
+    $('#craftSub').textContent=meta['Board information']||fileName;
+  }
+
+  function diag(cls,title,text){return `<div class="diag ${cls}"><div class="dtitle">${title}</div><p>${text}</p></div>`}
+
+  function renderDiagnostics(){
+    const out=[],mask=activeMask(),mk=motorKeys(),hi=motorMaxOutput(),lo=motorMinOutput();
+    if(mk.length===4){
+      const means=mk.map(k=>avg(vals(k,mask)));
+      const center=avg(means);
+      const dev=means.map(v=>(v-center)/center*100);
+      const spread=Math.max(...dev)-Math.min(...dev);
+      const cls=spread<12?'good':spread<22?'warn':'bad';
+      out.push(diag(cls,'Motor Load Balance',`فرق متوسط الحمل بين أعلى وأقل Motor ≈ ${fmt(spread,1)}%. هذا مؤشر فقط وقد يتأثر بالـCG والمناورات.`));
+
+      let sat=0,count=0,lowClip=0;
+      rows.forEach((r,i)=>{
+        if(!mask[i])return;
+        mk.forEach(k=>{
+          const v=num(r[k]); if(v===null)return;
+          count++; if(v>=hi-7)sat++; if(v<=lo+7)lowClip++;
+        });
+      });
+      const satPct=count?sat/count*100:0, lowPct=count?lowClip/count*100:0;
+      out.push(diag(satPct<1?'good':satPct<5?'warn':'bad','Motor Saturation',`${fmt(satPct,2)}% من عينات المحركات قرب الحد الأعلى (${hi}). Low clipping: ${fmt(lowPct,2)}%.`));
+    }else{
+      out.push(diag('warn','Motors','لم أجد أربع قنوات motor[] كاملة في الملف.'));
+    }
+
+    const errKeys=['axisError[0]','axisError[1]','axisError[2]'].filter(k=>headers.includes(k));
+    if(errKeys.length){
+      const er=errKeys.map(k=>rms(vals(k,mask)));
+      out.push(diag('good','Tracking Data',`RMS axisError — Roll ${fmt(er[0],1)}, Pitch ${fmt(er[1],1)}, Yaw ${fmt(er[2],1)}. نستخدمها للمقارنة داخل نفس الرحلة، وليس كحد نجاح ثابت.`));
+    }else{
+      out.push(diag('warn','Tracking Data','axisError غير موجود؛ سنعتمد لاحقًا على Setpoint مقابل Gyro عند الحاجة.'));
+    }
+
+    const gyroKeys=['gyroADC[0]','gyroADC[1]','gyroADC[2]'].filter(k=>headers.includes(k));
+    if(gyroKeys.length){
+      const valid=gyroKeys.every(k=>vals(k).length>Math.max(50,rows.length*.2));
+      out.push(diag(valid?'good':'warn','Gyro Data',valid?'بيانات Gyro موجودة بكثافة كافية للرسم والتحليل السريع.':'بيانات Gyro قليلة أو غير مكتملة في هذا الملف.'));
+    }
+
+    if(meta.dshot_bidir!==undefined){
+      const on=String(meta.dshot_bidir)==='1';
+      out.push(diag(on?'good':'warn','Bidirectional DShot',on?'مفعّل في إعدادات هذا التسجيل.':'غير مفعّل في إعدادات هذا التسجيل؛ لا نستنتج من ذلك وجود عطل.'));
+    }
+
+    $('#diagnostics').innerHTML=out.join('');
+    $('#diagCount').textContent=out.length+' checks';
+  }
+
+  function renderMotors(){
+    const mk=motorKeys(),mask=activeMask(),hi=motorMaxOutput();
+    if(!mk.length){
+      $('#motorGrid').innerHTML='<div class="chart-empty" style="grid-column:1/-1;padding:30px">لا توجد motor[] fields</div>';
+      return;
+    }
+    const means=mk.map(k=>avg(vals(k,mask))),center=avg(means);
+    const dev=means.map(v=>(v-center)/center*100),spread=Math.max(...dev)-Math.min(...dev);
+    $('#motorSpread').textContent='Load spread '+fmt(spread,1)+'%';
+    $('#motorGrid').innerHTML=mk.map((k,i)=>{
+      const pct=Math.max(0,Math.min(100,means[i]/hi*100));
+      return `<div class="motor-card"><b><span>M${i+1}</span><span>${fmt(means[i],0)}</span></b><div class="motor-bar"><div class="motor-fill" style="width:${pct}%"></div></div><div class="motor-meta"><span>${dev[i]>=0?'+':''}${fmt(dev[i],1)}%</span><span>avg load</span></div></div>`;
+    }).join('');
+  }
+
+  function groupKeys(name){return (groups[name]||[]).filter(k=>headers.includes(k)&&vals(k).length>1)}
+
+  function resizeCanvas(){
+    const dpr=Math.max(1,window.devicePixelRatio||1),rect=canvas.getBoundingClientRect();
+    canvas.width=Math.round(rect.width*dpr);canvas.height=Math.round(rect.height*dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+
+  function drawGroup(name){
+    currentGroup=name;
+    document.querySelectorAll('.graph-btn').forEach(b=>b.classList.toggle('active',b.dataset.group===name));
+    const keys=groupKeys(name);
+    $('#chartTitle').textContent=({motors:'Motors',compare:'Setpoint + Gyro',gyro:'Gyro',setpoint:'Setpoint',dterm:'D-term',error:'Tracking Error'})[name]||name;
+    $('#chartStats').textContent=keys.length
+      ? (name==='compare' ? 'Solid = Setpoint · Dashed = Gyro · Roll / Pitch / Yaw' : keys.map(prettyLabel).join(' • '))
+      : 'No compatible fields';
+    if(!keys.length){canvas.hidden=true;$('#chartEmpty').hidden=false;$('#chartEmpty').textContent='هذه المجموعة غير موجودة في الملف';return}
+    $('#chartEmpty').hidden=true;canvas.hidden=false;
+    resizeCanvas();
+    const w=canvas.clientWidth,h=canvas.clientHeight,p={l:58,r:18,t:30,b:36},pw=w-p.l-p.r,ph=h-p.t-p.b;
+    ctx.clearRect(0,0,w,h);
+
+    let ymin=Infinity,ymax=-Infinity;
+    const all=[];
+    keys.forEach(k=>{
+      const a=vals(k); all.push(a);
+      a.forEach(v=>{if(v<ymin)ymin=v;if(v>ymax)ymax=v});
+    });
+    if(!Number.isFinite(ymin)||!Number.isFinite(ymax)){ymin=0;ymax=1}
+    if(ymin===ymax){ymin-=1;ymax+=1}
+    const pad=(ymax-ymin)*.08;ymin-=pad;ymax+=pad;
+
+    ctx.font='11px Segoe UI';ctx.lineWidth=1;ctx.strokeStyle='#211c27';ctx.fillStyle='#777080';ctx.textAlign='right';
+    for(let j=0;j<=5;j++){
+      const y=p.t+ph*j/5;ctx.beginPath();ctx.moveTo(p.l,y);ctx.lineTo(w-p.r,y);ctx.stroke();
+      const v=ymax-(ymax-ymin)*j/5;ctx.fillText(fmt(v,1),p.l-7,y+4);
+    }
+    for(let j=0;j<=5;j++){
+      const x=p.l+pw*j/5;ctx.beginPath();ctx.moveTo(x,p.t);ctx.lineTo(x,h-p.b);ctx.stroke();
+    }
+
+    const maxPts=1700,step=Math.max(1,Math.ceil(rows.length/maxPts));
+    keys.forEach((k,ki)=>{
+      const style=seriesStyle(k,ki);
+      ctx.strokeStyle=style.color;ctx.lineWidth=1.35;ctx.setLineDash(style.dash);ctx.beginPath();let started=false;
+      for(let i=0;i<rows.length;i+=step){
+        const v=num(rows[i][k]);if(v===null)continue;
+        const x=p.l+(i/(rows.length-1))*pw,y=p.t+((ymax-v)/(ymax-ymin))*ph;
+        if(!started){ctx.moveTo(x,y);started=true}else ctx.lineTo(x,y);
+      }
+      ctx.stroke();ctx.setLineDash([]);
+    });
+    let lx=p.l;ctx.textAlign='left';
+    keys.forEach((k,ki)=>{
+      const style=seriesStyle(k,ki),label=prettyLabel(k);
+      ctx.fillStyle=style.color;ctx.fillRect(lx,p.t-17,12,3);
+      ctx.fillStyle='#cfc8d8';ctx.fillText(label,lx+16,p.t-11);lx+=ctx.measureText(label).width+40;
+    });
+  }
+
+  function renderFields(){
+    const hot=new Set(Object.values(groups).flat());
+    $('#fieldCount').textContent=headers.length+' fields';
+    $('#fields').innerHTML=headers.map(h=>`<span class="field ${hot.has(h)?'hot':''}">${h}</span>`).join('');
+  }
+
+  function renderAll(fileName){
+    renderSummary(fileName);renderDiagnostics();renderMotors();renderFields();drawGroup(currentGroup);
+  }
+
+  function reset(){
+    meta={};headers=[];rows=[];input.value='';
+    $('#durationVal').textContent=$('#rateVal').textContent=$('#fwVal').textContent=$('#craftVal').textContent='—';
+    $('#durationSub').textContent='No file';$('#rateSub').textContent=$('#fwSub').textContent=$('#craftSub').textContent='—';
+    $('#diagnostics').innerHTML='<div class="diag"><div class="dtitle">ارفع ملف Blackbox</div><p>سنفحص التوازن بين المحركات، التشبع، جودة البيانات، وتتبع الأوامر بشكل سريع.</p></div>';
+    $('#diagCount').textContent='Waiting for file';$('#motorSpread').textContent='—';
+    $('#motorGrid').innerHTML='<div class="chart-empty" style="grid-column:1/-1;padding:30px">بانتظار الملف</div>';
+    $('#fieldCount').textContent='0 fields';$('#fields').innerHTML='<span class="field">No data</span>';
+    canvas.hidden=true;$('#chartEmpty').hidden=false;$('#chartEmpty').textContent='ارفع Blackbox CSV لعرض الرسم';
+  }
+
+  input.addEventListener('change',async()=>{
+    const f=input.files&&input.files[0];if(!f)return;
+    try{
+      const p=parseBlackbox(await f.text());meta=p.meta;headers=p.headers;rows=p.rows;
+      if(rows.length<10)throw new Error('الملف لا يحتوي عينات Blackbox كافية');
+      renderAll(f.name);
+    }catch(e){reset();alert(e.message||'تعذر قراءة Blackbox CSV')}
+  });
+  document.querySelectorAll('.graph-btn').forEach(b=>b.onclick=()=>drawGroup(b.dataset.group));
+  resetBtn.onclick=reset;
+  window.addEventListener('resize',()=>{if(rows.length)drawGroup(currentGroup)});
+})();
+</script>
+</body>
+</html>
