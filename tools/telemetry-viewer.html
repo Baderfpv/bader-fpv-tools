@@ -76,7 +76,11 @@ canvas{width:100%;height:440px;display:block;border-radius:10px;background:#0909
 .sensor-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}
 .sensor-head b{font-size:12px}.sensor-head span{font-size:10px;color:#666}
 .sensor-bar{display:flex;flex-wrap:wrap;gap:7px}
-.sensor-chip{padding:6px 9px;border:1px solid #282828;border-radius:999px;background:#0d0d0d;color:#9a9a9a;font-size:10px;direction:ltr}
+.sensor-chip{padding:6px 9px;border:1px solid #282828;border-radius:999px;background:#0d0d0d;color:#9a9a9a;font-size:10px;direction:ltr;font-family:inherit}
+button.sensor-chip{cursor:pointer;transition:transform .14s ease,border-color .14s ease,box-shadow .14s ease,filter .14s ease}
+button.sensor-chip:hover{transform:translateY(-1px);filter:brightness(1.16)}
+button.sensor-chip.active{border-color:var(--orange)!important;box-shadow:0 0 0 1px rgba(255,122,0,.16),0 0 18px rgba(255,122,0,.10);color:#fff!important}
+.sensor-chip.static{opacity:.5;cursor:default}
 .sensor-chip.rf{color:#9eeef6;border-color:rgba(34,211,238,.25);background:rgba(34,211,238,.055)}
 .sensor-chip.power{color:#ffe08a;border-color:rgba(251,191,36,.22);background:rgba(251,191,36,.05)}
 .sensor-chip.gps{color:#9ee8b8;border-color:rgba(52,211,153,.22);background:rgba(52,211,153,.05)}
@@ -128,7 +132,7 @@ canvas{width:100%;height:440px;display:block;border-radius:10px;background:#0909
   </div>
 
   <div class="sensor-panel">
-    <div class="sensor-head"><b>Available Telemetry</b><span id="sensorCount">0 detected</span></div>
+    <div class="sensor-head"><b>Available Telemetry — اضغط على أي Sensor لعرضه</b><span id="sensorCount">0 detected</span></div>
     <div class="sensor-bar" id="sensorBar"><span class="empty-note">لم يتم تحميل ملف بعد.</span></div>
   </div>
 
@@ -164,7 +168,7 @@ canvas{width:100%;height:440px;display:block;border-radius:10px;background:#0909
   const sensorBar=document.getElementById('sensorBar');
   const sensorCount=document.getElementById('sensorCount');
 
-  let rows=[],headers=[],hoverIndex=null,teleFileName='',flyRows=[],flyHeaders=[];
+  let rows=[],headers=[],hoverIndex=null,teleFileName='',flyRows=[],flyHeaders=[],extraSelectedKeys=new Set();
   const seriesMeta={
     RQly:{label:'RQly',color:'#ff545a',group:'rf'},
     TQly:{label:'TQly',color:'#a879ff',group:'rf'},
@@ -309,6 +313,35 @@ canvas{width:100%;height:440px;display:block;border-radius:10px;background:#0909
     return rows.map(function(r){return num(r[key])}).filter(function(v){return v!==null});
   }
 
+  function sensorGroup(key){
+    if(seriesMeta[key])return seriesMeta[key].group;
+    if(isGpsKey(key))return 'gps';
+    if(/(RQly|TQly|RSS|SNR|RFMD|TPWR)/i.test(key))return 'rf';
+    if(/(RxBt|Volt|Curr|Capa|Batt|Cell)/i.test(key))return 'power';
+    return 'other';
+  }
+
+  function metaFor(key){
+    if(seriesMeta[key])return seriesMeta[key];
+    const palette=['#22d3ee','#ff7a00','#a879ff','#29c5c5','#f4a62a','#ff545a','#20c979','#9b9b9b'];
+    let hash=0;
+    for(let i=0;i<key.length;i++)hash=(hash*31+key.charCodeAt(i))>>>0;
+    return {label:key,color:palette[hash%palette.length],group:sensorGroup(key)};
+  }
+
+  function isChartable(key){
+    return numericValues(key).length>=2;
+  }
+
+  function syncSensorChips(){
+    document.querySelectorAll('.sensor-chip[data-key]').forEach(function(b){
+      const key=b.dataset.key;
+      const top=document.querySelector('.seriesToggle[data-key="'+CSS.escape(key)+'"]');
+      const active=top?top.checked:extraSelectedKeys.has(key);
+      b.classList.toggle('active',active);
+    });
+  }
+
   function gpsActive(){
     const satsKey=headers.includes('GPS_numSat')?'GPS_numSat':(headers.includes('Sats')?'Sats':null);
     if(satsKey&&numericValues(satsKey).some(function(v){return v>=0}))return true;
@@ -355,15 +388,16 @@ canvas{width:100%;height:440px;display:block;border-radius:10px;background:#0909
 
   function renderAvailable(){
     const keys=detectedKeys();
-    sensorCount.textContent=keys.length+' detected';
+    const selectable=keys.filter(isChartable).length;
+    sensorCount.textContent=keys.length+' detected · '+selectable+' selectable';
     sensorBar.innerHTML=keys.length?keys.map(function(key){
-      let group='other';
-      if(seriesMeta[key])group=seriesMeta[key].group;
-      else if(isGpsKey(key))group='gps';
-      else if(/(RQly|TQly|RSS|SNR|RFMD|TPWR)/i.test(key))group='rf';
-      else if(/(RxBt|Volt|Curr|Capa|Batt|Cell)/i.test(key))group='power';
-      return '<span class="sensor-chip '+group+'">'+key+'</span>';
+      const group=sensorGroup(key);
+      if(isChartable(key)){
+        return '<button type="button" class="sensor-chip '+group+'" data-key="'+key+'" title="اضغط لإظهار أو إخفاء هذا الحقل في الرسم">'+key+' ↗</button>';
+      }
+      return '<span class="sensor-chip '+group+' static" title="هذا الحقل غير رقمي أو لا يحتوي عينات كافية للرسم">'+key+'</span>';
     }).join(''):'<span class="empty-note">لا توجد حقول فعالة.</span>';
+    syncSensorChips();
   }
 
   function renderToolbar(){
@@ -380,8 +414,10 @@ canvas{width:100%;height:440px;display:block;border-radius:10px;background:#0909
   }
 
   function enabledKeys(){
-    return [...document.querySelectorAll('.seriesToggle')].filter(function(t){return t.checked&&headers.includes(t.dataset.key)})
+    const top=[...document.querySelectorAll('.seriesToggle')]
+      .filter(function(t){return t.checked&&headers.includes(t.dataset.key)})
       .map(function(t){return t.dataset.key});
+    return [...new Set(top.concat([...extraSelectedKeys].filter(function(k){return headers.includes(k)&&isChartable(k)})))];
   }
 
   function latestValid(key,idx){
@@ -456,7 +492,7 @@ canvas{width:100%;height:440px;display:block;border-radius:10px;background:#0909
     }
 
     keys.forEach(function(key){
-      const meta=seriesMeta[key];ctx.strokeStyle=meta.color;ctx.lineWidth=1.8;ctx.beginPath();let started=false;
+      const meta=metaFor(key);ctx.strokeStyle=meta.color;ctx.lineWidth=1.8;ctx.beginPath();let started=false;
       rows.forEach(function(r,i){
         const v=num(r[key]);if(v===null)return;
         const x=pad.l+(rows.length<=1?0:(i/(rows.length-1))*pw);
@@ -468,9 +504,10 @@ canvas{width:100%;height:440px;display:block;border-radius:10px;background:#0909
 
     let lx=pad.l;ctx.font='12px Segoe UI';ctx.textAlign='left';
     keys.forEach(function(key){
-      ctx.fillStyle=seriesMeta[key].color;ctx.fillRect(lx,pad.t-18,12,3);
-      ctx.fillStyle='#cfcfcf';ctx.fillText(seriesMeta[key].label,lx+17,pad.t-12);
-      lx+=ctx.measureText(seriesMeta[key].label).width+46;
+      const meta=metaFor(key);
+      ctx.fillStyle=meta.color;ctx.fillRect(lx,pad.t-18,12,3);
+      ctx.fillStyle='#cfcfcf';ctx.fillText(meta.label,lx+17,pad.t-12);
+      lx+=ctx.measureText(meta.label).width+46;
     });
 
     if(hoverIndex!==null){
@@ -481,7 +518,7 @@ canvas{width:100%;height:440px;display:block;border-radius:10px;background:#0909
   }
 
   function reset(){
-    rows=[];headers=[];hoverIndex=null;teleFileName='';flyRows=[];flyHeaders=[];input.value='';flyInput.value='';canvas.hidden=true;empty.hidden=false;
+    rows=[];headers=[];hoverIndex=null;teleFileName='';flyRows=[];flyHeaders=[];extraSelectedKeys.clear();input.value='';flyInput.value='';canvas.hidden=true;empty.hidden=false;
     fileName.textContent='اختر ملف TeleLog.csv';
     rqlyVal.textContent=tpwrVal.textContent=dynVal.textContent='—';
     dynVal.className='value';dynSeq.textContent='TPWR غير مقروء';
@@ -517,7 +554,27 @@ canvas{width:100%;height:440px;display:block;border-radius:10px;background:#0909
     }
   });
 
-  toolbar.addEventListener('change',function(e){if(e.target&&e.target.classList.contains('seriesToggle'))draw()});
+  sensorBar.addEventListener('click',function(e){
+    const b=e.target.closest('.sensor-chip[data-key]');
+    if(!b)return;
+    const key=b.dataset.key;
+    const top=document.querySelector('.seriesToggle[data-key="'+CSS.escape(key)+'"]');
+    if(top){
+      top.checked=!top.checked;
+    }else{
+      if(extraSelectedKeys.has(key))extraSelectedKeys.delete(key);
+      else extraSelectedKeys.add(key);
+    }
+    syncSensorChips();
+    draw();
+  });
+
+  toolbar.addEventListener('change',function(e){
+    if(e.target&&e.target.classList.contains('seriesToggle')){
+      syncSensorChips();
+      draw();
+    }
+  });
   resetBtn.addEventListener('click',reset);
   window.addEventListener('resize',function(){if(rows.length)draw()});
 
