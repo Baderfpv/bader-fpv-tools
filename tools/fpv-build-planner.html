@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>اختار بناء الدرون بشكل صحيح — BADER FPV TOOLS</title>
+<style>
+:root{--bg:#070707;--card:#111;--line:#2c2c2c;--txt:#f4f4f4;--mut:#8f8f8f;--o:#ff8a1f;--g:#31d29a;--y:#f1c84c;--r:#ff6b6b}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% -10%,rgba(255,138,31,.15),transparent 35%),#070707;color:var(--txt);font-family:Segoe UI,Tahoma,Arial,sans-serif}
+.wrap{width:min(1160px,calc(100% - 28px));margin:auto;padding:28px 0 40px}.back{color:#ffb05a;text-decoration:none;font-size:14px;font-weight:800}
+.hero{text-align:center;padding:20px 0}.hero h1{margin:0;color:var(--o);font-size:clamp(30px,5vw,48px)}.hero p{color:#999;font-size:15px;line-height:1.7}
+.badge{display:inline-block;border:1px solid rgba(255,138,31,.3);border-radius:999px;padding:6px 9px;color:#ffbd78;font-size:11px;margin:3px}
+.grid{display:grid;grid-template-columns:360px 1fr;gap:14px}.panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px}
+h2{font-size:13px;margin:0}.section{border-top:1px solid #252525;margin-top:14px;padding-top:14px}.section:first-of-type{border-top:0;padding-top:7px}
+.title{display:flex;justify-content:space-between;gap:8px;margin-bottom:9px}.title b{font-size:10px}.title span{font-size:8px;color:#666;direction:ltr}
+.opts{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.opts.two{grid-template-columns:repeat(2,1fr)}.opts.three{grid-template-columns:repeat(3,1fr)}
+.opt{border:1px solid #363636;border-radius:10px;background:#0a0a0a;color:#8d8d8d;padding:10px 7px;font-size:11px;font-weight:900;cursor:pointer}.opt.active{border-color:var(--o);color:#fff;background:rgba(255,138,31,.08)}
+.row{display:grid;grid-template-columns:1fr 110px;gap:8px;align-items:center;margin-top:8px}.row label{font-size:11px;color:#aaa}.num{width:100%;padding:8px;border:1px solid #363636;border-radius:9px;background:#080808;color:#fff;text-align:center;direction:ltr;font-weight:900}
+.head{display:flex;justify-content:space-between;align-items:center}.status{border:1px solid #333;border-radius:10px;padding:8px 12px;text-align:center;direction:ltr}.status small{display:block;color:#666;font-size:9px}.status strong{display:block;margin-top:4px;font-size:18px}
+.status.ok strong{color:var(--g)}.status.warn strong{color:var(--y)}.status.bad strong{color:var(--r)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}.stat{background:#0a0a0a;border:1px solid #292929;border-radius:12px;padding:11px}.stat small{font-size:9px;color:#6f6f6f}.stat strong{display:block;margin-top:6px;font-size:18px;direction:ltr}
+.checks{display:grid;gap:8px;margin-top:12px}.check{display:grid;grid-template-columns:34px 1fr;gap:10px;padding:11px;border:1px solid #292929;border-radius:13px;background:#0a0a0a}.ico{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-weight:900}
+.check.ok .ico{color:var(--g);border:1px solid rgba(49,210,154,.25);background:rgba(49,210,154,.07)}.check.warn .ico{color:var(--y);border:1px solid rgba(241,200,76,.25);background:rgba(241,200,76,.07)}.check.bad .ico{color:var(--r);border:1px solid rgba(255,107,107,.25);background:rgba(255,107,107,.07)}.check.info .ico{color:#67c9ff;border:1px solid rgba(103,201,255,.25);background:rgba(103,201,255,.07)}
+.check b{font-size:12px}.check p{margin:4px 0 0;color:#858585;font-size:11px;line-height:1.6}
+.summary{margin-top:12px;border:1px solid rgba(255,138,31,.25);border-radius:14px;padding:12px;background:rgba(255,138,31,.035)}.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.chip{border:1px solid #353535;border-radius:999px;padding:6px 8px;font-size:10px;color:#bbb;direction:ltr}
+.note{margin-top:12px;color:#777;font-size:10px;line-height:1.7}.footer{text-align:center;color:#555;font-size:10px;margin-top:18px;direction:ltr}
+@media(max-width:900px){.grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}}@media(max-width:540px){.opts{grid-template-columns:repeat(2,1fr)}.row{grid-template-columns:1fr 100px}}
+
+.select{width:100%;padding:8px;border:1px solid #363636;border-radius:9px;background:#080808;color:#fff;direction:ltr;font-weight:900;outline:none}
+.select:focus{border-color:var(--o)}
+.help{margin-top:6px;color:#707070;font-size:10px;line-height:1.55}
+.shop{margin-top:14px}.shop h3{margin:0 0 8px;font-size:14px;color:#e6e6e6}.shop-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.shop-card{border:1px solid #2d2d2d;border-radius:13px;background:#0a0a0a;padding:10px}.shop-card b{display:block;font-size:11px;color:#ddd}.shop-card span{display:block;margin-top:3px;color:#777;font-size:10px;direction:ltr;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.shop-card a{display:block;margin-top:8px;text-align:center;text-decoration:none;border:1px solid rgba(255,138,31,.3);border-radius:8px;padding:7px;color:#ffb15f;background:rgba(255,138,31,.055);font-size:10px;font-weight:900}
+.sumhead{display:flex;justify-content:space-between;gap:8px;align-items:center}.copy{border:1px solid #3b332b;border-radius:8px;background:#0a0a0a;color:#c9c9c9;padding:6px 8px;font-size:10px;font-weight:900;cursor:pointer}
+@media(max-width:540px){.shop-grid{grid-template-columns:1fr}}
+
+.help-cta{
+  margin-top:14px;
+  border:1px solid rgba(97,201,255,.28);
+  background:linear-gradient(180deg,rgba(97,201,255,.06),rgba(97,201,255,.025));
+  border-radius:14px;
+  padding:13px;
+}
+.help-cta b{display:block;font-size:14px;color:#dff5ff}
+.help-cta p{margin:5px 0 10px;color:#858585;font-size:11px;line-height:1.65}
+.help-link{
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  text-decoration:none;border:1px solid rgba(97,201,255,.30);
+  border-radius:9px;padding:9px 10px;background:rgba(97,201,255,.08);
+  color:#9addff;font-size:11px;font-weight:900
+}
+.help-link:hover{background:rgba(97,201,255,.13)}
+
+.search-modal{position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.78);backdrop-filter:blur(5px)}
+.search-modal.open{display:flex}
+.search-box{width:min(680px,100%);max-height:90vh;overflow:auto;background:#0e0e0e;border:1px solid #353535;border-radius:18px;padding:16px;box-shadow:0 28px 80px rgba(0,0,0,.55)}
+.search-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.search-head h3{margin:0;font-size:16px;color:#f2f2f2}
+.search-close{border:1px solid #3a3a3a;background:#090909;color:#aaa;border-radius:9px;padding:7px 10px;cursor:pointer;font-weight:900}
+.search-query{margin-top:12px;padding:11px 12px;border:1px solid rgba(255,138,31,.28);background:rgba(255,138,31,.05);border-radius:11px;color:#ffbd78;font-size:12px;font-weight:900;direction:ltr;text-align:left;word-break:break-word}
+.store-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:12px}
+.store-btn{display:flex;align-items:center;justify-content:space-between;gap:8px;text-decoration:none;border:1px solid #303030;border-radius:11px;padding:11px 12px;background:#090909;color:#e5e5e5;font-size:11px;font-weight:900}
+.store-btn:hover{border-color:#ff8a1f;background:rgba(255,138,31,.06)}
+.store-btn span{color:#727272;font-size:9px;direction:ltr}
+.search-hint{margin-top:10px;color:#777;font-size:10px;line-height:1.6}
+@media(max-width:560px){.store-grid{grid-template-columns:1fr}}
+
+.brand-guide{margin-top:14px}
+.brand-guide h3{margin:0 0 6px;font-size:14px;color:#e8e8e8}
+.brand-guide .lead{margin:0 0 10px;color:#858585;font-size:10px;line-height:1.6}
+.brand-sections{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.brand-section{border:1px solid #2e2e2e;border-radius:14px;background:#0a0a0a;padding:11px}
+.brand-section h4{margin:0;font-size:11px;color:#ffb464}
+.brand-section p{margin:4px 0 8px;color:#737373;font-size:9px;line-height:1.5}
+.brand-list{display:grid;gap:6px}
+.brand-btn{
+  width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;
+  border:1px solid #333;border-radius:9px;background:#0e0e0e;color:#e6e6e6;
+  padding:9px 10px;cursor:pointer;text-align:right;font-size:10px;font-weight:900
+}
+.brand-btn:hover{border-color:#ff8a1f;background:rgba(255,138,31,.055)}
+.brand-btn small{font-size:8px;color:#737373;font-weight:700;direction:ltr}
+@media(max-width:820px){.brand-sections{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<a class="back" href="../index.html">← BADER FPV TOOLS</a>
+<div class="hero"><h1>اختار بناء الدرون بشكل صحيح</h1><p>اختر الفريم والقطع، افحص التوافق، ثم ابحث عن كل قطعة مباشرة في محرك بحث منتجات FPV.</p><span class="badge">FRAME PRESETS</span><span class="badge">BUILD CHECK</span><span class="badge">BATTERY SIZE</span><span class="badge">PRODUCT SEARCH</span></div>
+
+<div class="grid">
+<section class="panel">
+<h2>ابدأ من هنا</h2>
+
+<div class="section"><div class="title"><b>الفريم</b><span>FRAME</span></div>
+<div class="opts" id="frameClass"><button class="opt" data-v="3">3"</button><button class="opt" data-v="3.5">3.5"</button><button class="opt active" data-v="5">5"</button><button class="opt" data-v="7">7"</button></div>
+<div class="row"><label>Frame Model</label><select class="select" id="frameModel"></select></div>
+<div class="help">الموديل يستخدم في الملخص والبحث. فحص البروبلر يعتمد على فئة الفريم.</div></div>
+
+<div class="section"><div class="title"><b>البطارية</b><span>BATTERY</span></div>
+<div class="opts" id="bat"><button class="opt" data-v="2">2S</button><button class="opt active" data-v="4">4S</button><button class="opt" data-v="6">6S</button><button class="opt" data-v="8">8S</button></div></div>
+
+<div class="section"><div class="title"><b>المحرك والمراوح</b><span>MOTOR / PROP</span></div>
+<div class="row"><label>Motor Size</label><select class="select" id="motorSize"><option>1404</option><option>1804</option><option>2004</option><option selected>2207</option><option>2306.5</option><option>2806.5</option></select></div>
+<div class="row"><label>Motor KV</label><input class="num" id="kv" type="number" value="1950"></div>
+<div class="row"><label>حجم المراوح (إنش)</label><input class="num" id="prop" type="number" value="5" step=".1"></div></div>
+
+<div class="section"><div class="title"><b>ESC</b><span>POWER</span></div>
+<div class="row"><label>ESC Rating لكل موتور</label><input class="num" id="esc" type="number" value="55"></div>
+<div class="row"><label>Motor Max Current</label><input class="num" id="motorA" type="number" value="42"></div></div>
+
+<div class="section"><div class="title"><b>Receiver</b><span>RX</span></div>
+<div class="opts three" id="rx"><button class="opt active" data-v="ELRS">ELRS</button><button class="opt" data-v="Crossfire">Crossfire</button><button class="opt" data-v="Other">Other</button></div></div>
+
+<div class="section"><div class="title"><b>نظام الفيديو</b><span>VIDEO</span></div>
+<div class="opts two" id="video"><button class="opt" data-v="Analog">Analog</button><button class="opt" data-v="HDZero">HDZero</button><button class="opt active" data-v="DJI O4">DJI O3/O4</button><button class="opt" data-v="Walksnail">Walksnail</button></div></div>
+
+<div class="section"><div class="title"><b>إضافات</b><span>EXTRAS</span></div>
+<div class="opts two" style="margin-top:8px"><button class="opt active" id="gps">GPS</button><button class="opt" id="telem">ESC Telemetry</button></div></div>
+</section>
+
+<section class="panel">
+<div class="head"><h2>نتيجة الفحص</h2><div class="status ok" id="status"><small>BUILD STATUS</small><strong id="statusText">GOOD</strong></div></div>
+<div class="stats">
+<div class="stat"><small>NO-LOAD RPM</small><strong id="rpm">32.8k</strong></div>
+<div class="stat"><small>ESC HEADROOM</small><strong id="headroom">31%</strong></div>
+<div class="stat"><small>BATTERY SIZE</small><strong id="batterySize">1300–1800mAh</strong></div>
+<div class="stat"><small>PROP CLASS</small><strong id="pclass">5"</strong></div>
+</div>
+<div class="checks" id="checks"></div>
+<div class="summary"><div class="sumhead"><b style="font-size:10px;color:#ffb15f">Build Summary</b><button class="copy" id="copy">نسخ التجميعة</button></div><div class="chips" id="chips"></div></div>
+<div class="brand-guide">
+<h3>شركات معروفة لكل قطعة</h3>
+<p class="lead">اختر الشركة في الفريم أو المحرك أو الستاك أو المراوح أو البطارية، وسنجهز لك بحثًا مناسبًا حسب مواصفات التجميعة.</p>
+<div class="brand-sections">
+  <div class="brand-section">
+    <h4>الفريم</h4>
+    <p>خيارات معروفة ومنتشرة لفئات Freestyle وRacing وLong Range.</p>
+    <div class="brand-list">
+      <button class="brand-btn" data-brand-cat="frame" data-brand="ImpulseRC">ImpulseRC <small>FRAME</small></button>
+      <button class="brand-btn" data-brand-cat="frame" data-brand="AOS">AOS <small>FRAME</small></button>
+      <button class="brand-btn" data-brand-cat="frame" data-brand="TBS">TBS <small>FRAME</small></button>
+      <button class="brand-btn" data-brand-cat="frame" data-brand="GEPRC">GEPRC <small>FRAME</small></button>
+    </div>
+  </div>
+  <div class="brand-section">
+    <h4>المحركات</h4>
+    <p>شركات معروفة بمحركات FPV لمقاسات واستخدامات متعددة.</p>
+    <div class="brand-list">
+      <button class="brand-btn" data-brand-cat="motor" data-brand="T-Motor">T-Motor <small>MOTOR</small></button>
+      <button class="brand-btn" data-brand-cat="motor" data-brand="RCINPOWER">RCINPOWER <small>MOTOR</small></button>
+      <button class="brand-btn" data-brand-cat="motor" data-brand="iFlight XING">iFlight XING <small>MOTOR</small></button>
+      <button class="brand-btn" data-brand-cat="motor" data-brand="BrotherHobby">BrotherHobby <small>MOTOR</small></button>
+    </div>
+  </div>
+  <div class="brand-section">
+    <h4>الستاك</h4>
+    <p>شركات معروفة في FC + ESC Stack لتجميعات FPV.</p>
+    <div class="brand-list">
+      <button class="brand-btn" data-brand-cat="stack" data-brand="SpeedyBee">SpeedyBee <small>STACK</small></button>
+      <button class="brand-btn" data-brand-cat="stack" data-brand="T-Motor">T-Motor <small>STACK</small></button>
+      <button class="brand-btn" data-brand-cat="stack" data-brand="iFlight">iFlight <small>STACK</small></button>
+      <button class="brand-btn" data-brand-cat="stack" data-brand="Diatone">Diatone <small>STACK</small></button>
+    </div>
+  </div>
+
+  <div class="brand-section">
+    <h4>المراوح</h4>
+    <p>ماركات مراوح منتشرة لفئات Freestyle وRacing وLong Range.</p>
+    <div class="brand-list">
+      <button class="brand-btn" data-brand-cat="prop" data-brand="HQProp">HQProp <small>PROP</small></button>
+      <button class="brand-btn" data-brand-cat="prop" data-brand="Gemfan">Gemfan <small>PROP</small></button>
+      <button class="brand-btn" data-brand-cat="prop" data-brand="DALPROP">DALPROP <small>PROP</small></button>
+      <button class="brand-btn" data-brand-cat="prop" data-brand="Ethix">Ethix <small>PROP</small></button>
+    </div>
+  </div>
+
+  <div class="brand-section">
+    <h4>البطارية</h4>
+    <p>ماركات LiPo معروفة ومتداولة بين هواة FPV.</p>
+    <div class="brand-list">
+      <button class="brand-btn" data-brand-cat="battery" data-brand="Tattu">Tattu <small>LiPo</small></button>
+      <button class="brand-btn" data-brand-cat="battery" data-brand="CNHL">CNHL <small>LiPo</small></button>
+      <button class="brand-btn" data-brand-cat="battery" data-brand="GNB">GNB <small>LiPo</small></button>
+      <button class="brand-btn" data-brand-cat="battery" data-brand="Dogcom">Dogcom <small>LiPo</small></button>
+    </div>
+  </div>
+</div>
+</div>
+<div class="help-cta">
+<b>تحتاج مساعدة في اختيار القطع أو التجميعة؟</b>
+<p>ادخل مجتمع FPV العربي واسأل الهواة مباشرة، وارسل لهم ملخص التجميعة من الأداة.</p>
+<a class="help-link" href="https://discord.gg/RkmbCTWNq" target="_blank" rel="noopener noreferrer">💬 دخول ديسكورد مجتمع FPV العربي</a>
+</div>
+<div class="note">الأداة Sanity Check وليست بديلًا عن Datasheet الموتور أو ESC. تحذيرات KV/Prop محافظة لأن الاستهلاك الحقيقي يعتمد على الموتور والبروبلر والوزن والتبريد. اختيار الشركة يجهز بحثًا مناسبًا حسب مواصفات التجميعة ثم يفتح محرك بحث منتجات FPV.</div>
+</section>
+</div>
+
+<div class="search-modal" id="searchModal">
+  <div class="search-box" role="dialog" aria-modal="true" aria-label="محرك بحث منتجات FPV">
+    <div class="search-head">
+      <h3>محرك بحث منتجات FPV</h3>
+      <button class="search-close" id="searchClose">إغلاق ×</button>
+    </div>
+    <div class="search-query" id="searchQuery">—</div>
+    <div class="store-grid" id="storeGrid"></div>
+    <div class="search-hint">اختر المتجر، وستفتح نتائج البحث عن نفس القطعة مباشرة في موقع المتجر.</div>
+  </div>
+</div>
+<div class="footer">BADER FPV TOOLS — اختار بناء الدرون بشكل صحيح</div>
+</div>
+
+<script>
+(()=>{
+const $=s=>document.querySelector(s);
+const STORES={
+ getfpv:{name:'GetFPV',domain:'getfpv.com',url:q=>'https://www.getfpv.com/catalogsearch/result/?q='+encodeURIComponent(q)},
+ rdq:{name:'RaceDayQuads',domain:'racedayquads.com',url:q=>'https://www.racedayquads.com/search?q='+encodeURIComponent(q)+'&type=product'},
+ pyro:{name:'Pyrodrone',domain:'pyrodrone.com',url:q=>'https://pyrodrone.com/search?q='+encodeURIComponent(q)+'&type=product'},
+ rotor:{name:'Rotor Riot',domain:'rotorriot.com',url:q=>'https://rotorriot.com/search?q='+encodeURIComponent(q)+'&type=product'},
+ ali:{name:'AliExpress',domain:'aliexpress.com',url:q=>'https://www.aliexpress.com/w/wholesale-'+encodeURIComponent(q.replace(/\\s+/g,'-'))+'.html?SearchText='+encodeURIComponent(q)},
+ newbee:{name:'NewBeeDrone',domain:'newbeedrone.com',url:q=>'https://newbeedrone.com/search?q='+encodeURIComponent(q)+'&type=product'}
+};
+let s={frame:5,bat:4,rx:'ELRS',video:'DJI O4',gps:true,telem:false};
+const frames={
+ '3':['Custom 3\" Frame','AOS 3\" Class','Cinewhoop 3\" Frame'],
+ '3.5':['Custom 3.5\" Frame','AOS 3.5 Class','Freestyle 3.5\" Frame'],
+ '5':['Custom 5\" Frame','TBS Source One V5','ImpulseRC Apex 5\"','AOS 5 Class','GEPRC MARK5 Class'],
+ '7':['Custom 7\" Frame','Long Range 7\" Frame','Chimera7 Class']
+};
+function fillFrames(){const sel=$('#frameModel'),list=frames[String(s.frame)]||frames['5'];sel.innerHTML=list.map(x=>`<option>${x}</option>`).join('')}
+function group(id,key){document.querySelectorAll('#'+id+' [data-v]').forEach(b=>b.onclick=()=>{s[key]=(key==='bat'||key==='frame')?Number(b.dataset.v):b.dataset.v;document.querySelectorAll('#'+id+' .opt').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(key==='frame'){fillFrames();$('#prop').value=s.frame}render()})}
+group('frameClass','frame');group('bat','bat');group('rx','rx');group('video','video');
+$('#gps').onclick=()=>{s.gps=!s.gps;$('#gps').classList.toggle('active',s.gps);render()};
+$('#telem').onclick=()=>{s.telem=!s.telem;$('#telem').classList.toggle('active',s.telem);render()};
+['frameModel','motorSize','kv','prop','esc','motorA'].forEach(id=>$('#'+id).addEventListener('input',render));
+function add(a,type,title,text){a.push({type,title,text,ico:type==='ok'?'✓':type==='warn'?'!':type==='bad'?'×':'i'})}
+function openSearch(query){
+ $('#searchQuery').textContent=query;
+ $('#storeGrid').innerHTML=Object.values(STORES).map(store=>`
+   <a class="store-btn" href="${store.url(query)}" target="_blank" rel="noopener noreferrer">
+     <b>${store.name}</b><span>${store.domain} ↗</span>
+   </a>`).join('');
+ $('#searchModal').classList.add('open');
+}
+function closeSearch(){ $('#searchModal').classList.remove('open'); }
+function recommendedBattery(frame,cells){
+ if(frame<=3){
+   if(cells<=2)return '450–850mAh';
+   if(cells<=4)return '450–850mAh';
+   return '450–650mAh';
+ }
+ if(frame<=3.5){
+   if(cells<=4)return '650–1100mAh';
+   return '550–850mAh';
+ }
+ if(frame<=5){
+   if(cells<=4)return '1300–1800mAh';
+   if(cells<=6)return '1100–1500mAh';
+   return '850–1300mAh';
+ }
+ if(frame<=7){
+   if(cells<=4)return '3000–5000mAh';
+   if(cells<=6)return '2200–4000mAh';
+   return '1800–3000mAh';
+ }
+ return 'راجع مواصفات الفريم';
+}
+
+function brandQuery(cat,brand){
+ const motor=$('#motorSize').value;
+ const kv=+$('#kv').value||0;
+ if(cat==='frame') return `${brand} ${s.frame} inch FPV frame`;
+ if(cat==='motor') return `${brand} ${motor} ${kv}KV FPV motor`;
+ if(cat==='stack') return `${brand} ${s.bat}S FPV FC ESC stack`;
+ if(cat==='prop') return `${brand} ${($('#prop').value||s.frame)} inch FPV propeller`;
+ if(cat==='battery') return `${brand} ${s.bat}S ${recommendedBattery(s.frame,s.bat)} LiPo FPV battery`;
+ return brand;
+}
+
+function render(){
+ const model=$('#frameModel').value,motor=$('#motorSize').value,kv=+$('#kv').value||0,prop=+$('#prop').value||0,esc=+$('#esc').value||0,mA=+$('#motorA').value||0;
+ const fullV=s.bat*4.2,rpm=kv*fullV,margin=mA?((esc-mA)/mA*100):0;
+
+ const c=[];
+ if(prop>s.frame+.15)add(c,'bad','المراوح أكبر من فئة الفريم','اختر حجم مراوح مناسبًا للفريم أو راجع مواصفات الفريم الفعلية.');
+ else if(prop<s.frame-1.1)add(c,'warn','المراوح أصغر بكثير من الفريم','قد يكون مقصودًا، لكن راجع تصميم الفريم واستخدامك.');
+ else add(c,'ok','الفريم / المراوح','حجم المراوح متوافق مبدئيًا مع فئة الفريم.');
+ if(s.frame<=3.5&&['2207','2306.5','2806.5'].includes(motor))add(c,'warn','Motor كبير لفريم صغير','قد يكون ثقيلًا أو غير عملي لهذه الفئة؛ راجع وزن ومقاس الموتور.');
+ else if(s.frame>=7&&['1404','1804','2004'].includes(motor))add(c,'warn','Motor صغير لفريم 7\"','راجع قدرة الموتور المطلوبة للبروبلر والوزن.');
+ else add(c,'ok','Frame / Motor','حجم الموتور لا يطلق تعارضًا واضحًا مع فئة الفريم.');
+ if(s.bat>=6&&prop>=5&&kv>=2300)add(c,'bad','KV مرتفع جدًا','6S مع 5\"+ وKV مرتفع يحتاج مراجعة Datasheet للموتور والبروبلر.');
+ else if(s.bat>=6&&prop>=5&&kv>=2050)add(c,'warn','KV مرتفع نسبيًا','قد يعمل، لكن راجع استهلاك التيار والحرارة.');
+ else if(s.bat===4&&prop>=5&&kv>=2800)add(c,'warn','KV مرتفع على 4S','راجع توصية الشركة للموتور والبروبلر.');
+ else add(c,'ok','Motor / Battery','لا يوجد تعارض واضح في KV مقابل عدد الخلايا ضمن قواعد الأداة.');
+ add(c,'info','حجم البطارية المناسب','السعة المقترحة مبدئيًا لفريم '+s.frame+'″ على '+s.bat+'S: '+recommendedBattery(s.frame,s.bat)+'.');
+ if(esc<mA)add(c,'bad','ESC أقل من تيار الموتور','ESC Rating المدخل أقل من Motor Max Current.');
+ else if(margin<15)add(c,'warn','هامش ESC صغير','الهامش أقل من 15% حسب الأرقام المدخلة.');
+ else add(c,'ok','ESC Headroom','يوجد هامش جيد حسب القيم المدخلة.');
+
+ const bad=c.filter(x=>x.type==='bad').length,warn=c.filter(x=>x.type==='warn').length;
+ $('#status').className='status '+(bad?'bad':warn?'warn':'ok');$('#statusText').textContent=bad?'CHECK':warn?'REVIEW':'GOOD';
+ $('#rpm').textContent=(rpm/1000).toFixed(1)+'k';$('#headroom').textContent=Math.round(margin)+'%';$('#batterySize').textContent=recommendedBattery(s.frame,s.bat);$('#pclass').textContent=s.frame+'\"';
+ $('#checks').innerHTML=c.map(x=>`<div class="check ${x.type}"><div class="ico">${x.ico}</div><div><b>${x.title}</b><p>${x.text}</p></div></div>`).join('');
+ const chips=[model,s.frame+'\"',motor+' '+kv+'KV',s.bat+'S',esc+'A ESC',s.rx,s.video,s.gps?'GPS':'No GPS',s.telem?'ESC Telemetry':'No ESC Telemetry'];
+ $('#chips').innerHTML=chips.map(x=>`<span class="chip">${x}</span>`).join('');
+
+}
+document.querySelectorAll('[data-brand-cat]').forEach(btn=>btn.addEventListener('click',()=>{
+ openSearch(brandQuery(btn.dataset.brandCat,btn.dataset.brand));
+}));
+
+$('#copy').onclick=async()=>{const text=[...document.querySelectorAll('#chips .chip')].map(x=>x.textContent).join(' • ');try{await navigator.clipboard.writeText(text);$('#copy').textContent='تم النسخ ✓';setTimeout(()=>$('#copy').textContent='نسخ التجميعة',1200)}catch(e){$('#copy').textContent='انسخ يدويًا'}};
+$('#searchClose').onclick=closeSearch;
+$('#searchModal').addEventListener('click',e=>{if(e.target===$('#searchModal'))closeSearch()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSearch()});
+fillFrames();render();
+})();
+</script>
+</body></html>
